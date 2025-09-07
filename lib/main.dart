@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:walletik/screens/cards_screen.dart';
-import 'package:walletik/screens/add_card_screen.dart';
+import 'package:walletik/screens/search_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 
 void main() {
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Walletik :)',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
       ),
       home: const MyHomePage(),
     );
@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<Widget> _screens = [
     CardsScreen(),
-    AddCardScreen(),
+    SearchScreen(),
     SettingsScreen(),
   ];
 
