@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:walletik/screens/cards_screen.dart';
 import 'package:walletik/screens/search_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
+import 'package:walletik/providers/theme_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,19 +20,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Walletik :)',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: const ColorScheme.dark(
-          surface: Color(0xFF1b2345),
-          onSurface: Colors.white,
-          primary: Color(0xFF1b2345),
-          onPrimary: Colors.white,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF1b2345),
-      ),
-      home: const MyHomePage(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Walletik :)',
+          debugShowCheckedModeBanner: false,
+          theme: themeProvider.themeData,
+          home: const MyHomePage(),
+        );
+      },
     );
   }
 }

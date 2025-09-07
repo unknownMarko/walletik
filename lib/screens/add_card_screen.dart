@@ -63,8 +63,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                 String name = nameController.text;
                 String number = numberController.text;
 
-                print("Saved card: $name ($number)");
-
                 Navigator.pop(context);
               },
               child: const Text("Save"),
