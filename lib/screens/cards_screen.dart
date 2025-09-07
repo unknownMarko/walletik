@@ -74,11 +74,23 @@ class _CardsScreenState extends State<CardsScreen> {
             itemBuilder: (context, index) {
               if (index == 0) {
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const AddCardScreen()),
                     );
+                    
+                    if (result != null) {
+                      final newCard = {
+                        'shopName': result['name'],
+                        'description': result['description'] ?? '',
+                        'cardNumber': result['code'],
+                        'color': '#0066CC', // Default blue color
+                      };
+                      
+                      await CardStorage.addCard(newCard);
+                      await _loadCards();
+                    }
                   },
                   child: Container(
                     decoration: BoxDecoration(
