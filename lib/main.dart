@@ -43,9 +43,20 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  bool _isModalOpen = false;
+  VoidCallback? _closeCardsModal;
 
-  final List<Widget> _screens = [
-    CardsScreen(),
+  List<Widget> get _screens => [
+    CardsScreen(
+      onModalStateChanged: (isOpen) {
+        setState(() {
+          _isModalOpen = isOpen;
+        });
+      },
+      onCloseModalCallback: (callback) {
+        _closeCardsModal = callback;
+      },
+    ),
     SearchScreen(),
     SettingsScreen(),
   ];
@@ -55,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
+        physics: _isModalOpen ? NeverScrollableScrollPhysics() : null,
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
@@ -62,27 +74,55 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _pageController.animateToPage(
-            index,
-            duration: Duration(milliseconds: 300),
-            curve: Curves.ease,
-          );
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+      bottomNavigationBar: _isModalOpen ? 
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.7),
           ),
-        ],
-      ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _closeCardsModal?.call();
+              setState(() {
+                _isModalOpen = false;
+              });
+            },
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              currentIndex: _currentIndex,
+              onTap: null,
+              items: [
+                BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            ),
+          ),
+        ) :
+        BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            _pageController.animateToPage(
+              index,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.ease,
+            );
+          },
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
+        ),
     );
   }
 }
