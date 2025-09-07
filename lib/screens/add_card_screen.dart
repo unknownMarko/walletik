@@ -4,12 +4,74 @@ class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
 
   @override
-  AddCardScreenState createState() => AddCardScreenState();
+  State<AddCardScreen> createState() => _AddCardScreenState();
 }
 
-class AddCardScreenState extends State<AddCardScreen> {
+class _AddCardScreenState extends State<AddCardScreen> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController numberController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Add Card', style: TextStyle(fontSize: 24)));
+    return Scaffold(
+      backgroundColor: const Color(0xFF1b2345),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1b2345),
+        title: const Text("Add card", style: TextStyle(color: Colors.white)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Shop name",
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: numberController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Card number",
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1b2345),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              ),
+              onPressed: () {
+                String name = nameController.text;
+                String number = numberController.text;
+
+                print("Saved card: $name ($number)");
+
+                Navigator.pop(context);
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
