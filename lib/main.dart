@@ -17,7 +17,13 @@ class MyApp extends StatelessWidget {
       title: 'Walletik :)',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        colorScheme: const ColorScheme.dark(
+          surface: Color(0xFF1b2345),
+          onSurface: Colors.white,
+          primary: Color(0xFF1b2345),
+          onPrimary: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF1b2345),
       ),
       home: const MyHomePage(),
     );

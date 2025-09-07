@@ -14,10 +14,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1b2345),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1b2345),
-        title: const Text("Add card", style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text("Add card", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
