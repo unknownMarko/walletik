@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart';
-import '../data/mock_cards.dart';
 import '../services/card_storage.dart';
+import '../utils/color_utils.dart';
 import 'package:barcode/barcode.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -133,7 +133,7 @@ class _CardsScreenState extends State<CardsScreen> {
                   shopName: card['shopName'],
                   description: card['description'],
                   cardNumber: card['cardNumber'],
-                  cardColor: MockCards.hexToColor(card['color']),
+                  cardColor: ColorUtils.hexToColor(card['color']),
                 ),
               );
             },
@@ -157,7 +157,7 @@ class _CardsScreenState extends State<CardsScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
                       height: 320,
                       decoration: BoxDecoration(
-                        color: MockCards.hexToColor(selectedCard!['color']),
+                        color: ColorUtils.hexToColor(selectedCard!['color']),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
