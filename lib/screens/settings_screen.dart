@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,6 +32,21 @@ class SettingsScreenState extends State<SettingsScreen> {
             title: Text('Card Display'),
             subtitle: Text('Grid view'),
             onTap: () {},
+          ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return ListTile(
+                leading: Icon(Icons.palette),
+                title: Text('Theme Color'),
+                subtitle: Text(themeProvider.themeName),
+                trailing: Switch(
+                  value: themeProvider.isDarkTheme,
+                  onChanged: (val) {
+                    themeProvider.toggleTheme();
+                  },
+                ),
+              );
+            },
           ),
           _buildSectionHeader('Security'),
           ListTile(
