@@ -22,7 +22,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),  
         children: [
           _buildSectionHeader('Appearance'),
           ListTile(
@@ -38,6 +38,11 @@ class SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(value: false, onChanged: (val) {}),
           ),
           _buildSectionHeader('About'),
+          ListTile(
+            leading: Icon(Icons.favorite),
+            title: Text('Made with Love by'),
+            subtitle: Text('Kati & Marko'),
+          ),
           ListTile(
             leading: Icon(Icons.info),
             title: Text('App Version'),
