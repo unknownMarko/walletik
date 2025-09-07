@@ -12,9 +12,9 @@ class _CardsScreenState extends State<CardsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1b2345),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1b2345),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text("My cards", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: Center(
