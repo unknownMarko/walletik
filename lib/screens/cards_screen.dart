@@ -40,7 +40,7 @@ class _CardsScreenState extends State<CardsScreen> {
             ),
             itemCount: cards.length + 1,
             itemBuilder: (context, index) {
-              if (index == cards.length) {
+              if (index == 0) {
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -77,7 +77,7 @@ class _CardsScreenState extends State<CardsScreen> {
                 );
               }
               
-              final card = cards[index];
+              final card = cards[index - 1];
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -94,63 +94,120 @@ class _CardsScreenState extends State<CardsScreen> {
             },
           ),
           if (selectedCard != null)
-            Container(
-              color: Colors.black.withValues(alpha: 0.7),
-              child: Center(
-                child: Container(
-                  margin: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: MockCards.hexToColor(selectedCard!['color']),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedCard = null;
+                });
+              },
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.7),
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      // Prevent closing when tapping the card itself
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 120),
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: MockCards.hexToColor(selectedCard!['color']),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                   child: Stack(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.all(24),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               selectedCard!['shopName'],
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 28,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              selectedCard!['description'],
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            const Text(
-                              'Card Number',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
+                              selectedCard!['description'],
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Spacer(),
+                            const Text(
+                              'Card Number',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
                               selectedCard!['cardNumber'],
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w600,
-                                letterSpacing: 3,
+                                letterSpacing: 2,
                               ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Card'),
+                                          content: Text('Are you sure you want to delete "${selectedCard!['shopName']}" card?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  cards.removeWhere((card) => card == selectedCard);
+                                                  selectedCard = null;
+                                                });
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -171,7 +228,8 @@ class _CardsScreenState extends State<CardsScreen> {
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
