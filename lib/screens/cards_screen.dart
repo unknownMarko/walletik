@@ -15,7 +15,7 @@ class _CardsScreenState extends State<CardsScreen> {
       backgroundColor: const Color(0xFF1b2345),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1b2345),
-        title: const Text("My cards", style: TextStyle(color: Colors.white)),
+        title: Text("My cards", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: Center(
         child: GestureDetector(
@@ -29,14 +29,14 @@ class _CardsScreenState extends State<CardsScreen> {
             width: 250,
             height: 150,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Center(
+            child: Center(
               child: Icon(
                 Icons.add,
                 size: 60,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
