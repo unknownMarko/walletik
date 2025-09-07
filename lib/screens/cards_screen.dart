@@ -3,6 +3,8 @@ import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart';
 import '../data/mock_cards.dart';
 import '../services/card_storage.dart';
+import 'package:barcode/barcode.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class CardsScreen extends StatefulWidget {
   final Function(bool)? onModalStateChanged;
@@ -39,6 +41,11 @@ class _CardsScreenState extends State<CardsScreen> {
       });
       widget.onModalStateChanged?.call(false);
     }
+  }
+  
+  String _generateBarcode(String data) {
+    final barcode = Barcode.code128();
+    return barcode.toSvg(data, width: 280, height: 80);
   }
 
   @override
@@ -135,8 +142,8 @@ class _CardsScreenState extends State<CardsScreen> {
                       // Prevent closing when tapping the card itself
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 120),
-                      height: 300,
+                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+                      height: 320,
                       decoration: BoxDecoration(
                         color: MockCards.hexToColor(selectedCard!['color']),
                         borderRadius: BorderRadius.circular(16),
@@ -172,21 +179,18 @@ class _CardsScreenState extends State<CardsScreen> {
                               ),
                             ),
                             const Spacer(),
-                            const Text(
-                              'Card Number',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              selectedCard!['cardNumber'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 2,
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SvgPicture.string(
+                                  _generateBarcode(selectedCard!['cardNumber']),
+                                  width: 280,
+                                  height: 80,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 20),
