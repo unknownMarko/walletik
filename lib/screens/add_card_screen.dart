@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:barcode/barcode.dart' as bc;
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
@@ -10,6 +12,7 @@ class AddCardScreen extends StatefulWidget {
 
 class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
   final TextEditingController numberController = TextEditingController();
 
   void _startScan() async {
@@ -31,6 +34,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
     if (nameController.text.isNotEmpty && numberController.text.isNotEmpty) {
       Navigator.pop(context, {
         'name': nameController.text,
+        'description': descriptionController.text, // ✅ нове поле
         'code': numberController.text,
       });
     }
@@ -38,17 +42,33 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String code = numberController.text;
+
+    String? svgCode;
+    if (code.isNotEmpty) {
+      final barcode = bc.Barcode.code128();
+      svgCode = barcode.toSvg(
+        code,
+        width: 300,
+        height: 100,
+        drawText: false,
+      );
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text("Add card",
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        title: Text(
+          "Add card",
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // Shop name
             TextField(
               controller: nameController,
               style: const TextStyle(color: Colors.white),
@@ -64,6 +84,25 @@ class _AddCardScreenState extends State<AddCardScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Description
+            TextField(
+              controller: descriptionController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Description (optional)",
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Card number
             TextField(
               controller: numberController,
               style: const TextStyle(color: Colors.white),
@@ -82,7 +121,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
+
+            // Generated barcode
+            if (svgCode != null)
+              Column(
+                children: [
+                  SvgPicture.string(svgCode, color: Colors.white),
+                  const SizedBox(height: 30),
+                ],
+              ),
+
+            // Save button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
