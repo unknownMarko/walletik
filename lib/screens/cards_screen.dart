@@ -55,10 +55,25 @@ class _CardsScreenState extends State<CardsScreen> {
       appBar: AppBar(
         backgroundColor: selectedCard != null 
           ? Colors.black.withValues(alpha: 0.7)
-          : Theme.of(context).colorScheme.surface,
-        title: Text("Walletik", style: TextStyle(color: selectedCard != null 
-          ? Colors.white.withValues(alpha: 0.9)
-          : Theme.of(context).colorScheme.onSurface)),
+          : null, // Use theme's AppBarTheme backgroundColor
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.scale(
+              scale: 1.5,
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 32,
+                width: 32,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text("Walletik", style: TextStyle(color: selectedCard != null 
+              ? Colors.white.withValues(alpha: 0.9)
+              : Theme.of(context).colorScheme.onSurface)),
+          ],
+        ),
       ),
       body: Stack(
         children: [
