@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/background_logo.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,7 +13,7 @@ class SettingsScreen extends StatefulWidget {
 class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
         title,
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -23,7 +24,10 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: BackgroundLogo(
+        child: SafeArea(
+          child: ListView(
         padding: EdgeInsets.all(16),  
         children: [
           _buildSectionHeader('Appearance'),
@@ -66,6 +70,8 @@ class SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text('0.0.1'),
           ),
         ],
+          ),
+        ),
       ),
     );
   }

@@ -92,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
               currentIndex: _currentIndex,
               onTap: null,
               items: [
-                BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
                 BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings),
@@ -104,6 +104,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ) :
         BottomNavigationBar(
           currentIndex: _currentIndex,
+          selectedIconTheme: const IconThemeData(size: 28),
+          unselectedIconTheme: const IconThemeData(size: 24),
           onTap: (index) {
             setState(() {
               _currentIndex = index;
@@ -115,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
             BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),

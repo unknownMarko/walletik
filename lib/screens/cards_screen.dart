@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart';
+import '../widgets/background_logo.dart';
 import '../services/card_storage.dart';
 import '../utils/color_utils.dart';
 import 'package:barcode/barcode.dart';
@@ -52,33 +53,12 @@ class _CardsScreenState extends State<CardsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: selectedCard != null 
-          ? Colors.black.withValues(alpha: 0.7)
-          : null, // Use theme's AppBarTheme backgroundColor
-        centerTitle: true,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
+      body: BackgroundLogo(
+        child: SafeArea(
+          child: Stack(
           children: [
-            Transform.scale(
-              scale: 1.5,
-              child: Image.asset(
-                'assets/images/logo.png',
-                height: 32,
-                width: 32,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text("Walletik", style: TextStyle(color: selectedCard != null 
-              ? Colors.white.withValues(alpha: 0.9)
-              : Theme.of(context).colorScheme.onSurface)),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: [
-          GridView.builder(
-            padding: const EdgeInsets.all(16),
+            GridView.builder(
+              padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
@@ -299,6 +279,8 @@ class _CardsScreenState extends State<CardsScreen> {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }

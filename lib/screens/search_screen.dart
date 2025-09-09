@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/background_logo.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,6 +11,13 @@ class SearchScreen extends StatefulWidget {
 class SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Search', style: TextStyle(fontSize: 24)));
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: BackgroundLogo(
+        child: SafeArea(
+          child: Center(child: Text('Search', style: TextStyle(fontSize: 24))),
+        ),
+      ),
+    );
   }
 }
