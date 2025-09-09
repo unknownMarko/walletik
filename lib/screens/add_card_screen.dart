@@ -34,7 +34,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
     if (nameController.text.isNotEmpty && numberController.text.isNotEmpty) {
       Navigator.pop(context, {
         'name': nameController.text,
-        'description': descriptionController.text, // ✅ нове поле
+        'description': descriptionController.text,
         'code': numberController.text,
       });
     }
@@ -150,8 +150,15 @@ class _AddCardScreenState extends State<AddCardScreen> {
   }
 }
 
-class BarcodeScannerPage extends StatelessWidget {
+class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
+
+  @override
+  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+}
+
+class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
+  bool _hasDetected = false;
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +166,18 @@ class BarcodeScannerPage extends StatelessWidget {
       appBar: AppBar(title: const Text("Scan Barcode")),
       body: MobileScanner(
         onDetect: (capture) {
+          if (_hasDetected) {
+            return;
+          }
+
           final List<Barcode> barcodes = capture.barcodes;
+          
           if (barcodes.isNotEmpty) {
-            final String? rawValue = barcodes.first.rawValue;
+            final barcode = barcodes.first;
+            final String? rawValue = barcode.rawValue;
+            
             if (rawValue != null) {
+              _hasDetected = true;
               Navigator.pop(context, rawValue);
             }
           }
