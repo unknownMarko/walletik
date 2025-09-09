@@ -80,7 +80,7 @@ class _CardsScreenState extends State<CardsScreen> {
                       MaterialPageRoute(builder: (context) => const AddCardScreen()),
                     );
                     
-                    if (result != null) {
+                    if (result != null && result is Map<String, dynamic>) {
                       final newCard = {
                         'shopName': result['name'],
                         'description': result['description'] ?? '',

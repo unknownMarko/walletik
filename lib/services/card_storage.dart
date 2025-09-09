@@ -9,7 +9,6 @@ class CardStorage {
     final cardsJson = prefs.getString(_cardsKey);
     
     if (cardsJson == null) {
-      // Return empty list if no data exists
       return [];
     }
     
@@ -17,7 +16,6 @@ class CardStorage {
       final List<dynamic> cardsList = json.decode(cardsJson);
       return cardsList.cast<Map<String, dynamic>>();
     } catch (e) {
-      // Return empty list if parsing fails
       return [];
     }
   }
