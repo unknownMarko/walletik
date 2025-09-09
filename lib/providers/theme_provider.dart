@@ -21,8 +21,11 @@ class ThemeProvider extends ChangeNotifier {
           onPrimary: Colors.white,
         ),
         scaffoldBackgroundColor: const Color(0xFF1b2345),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0f1729),
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF1b2345),
+          backgroundColor: Color(0xFF0f1729),
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white60,
         ),
