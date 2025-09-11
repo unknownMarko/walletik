@@ -63,6 +63,7 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> cards = [];
   List<Map<String, dynamic>> recentCards = [];
+  List<Map<String, dynamic>> favoriteCards = [];
   Map<String, dynamic>? selectedCard;
   int? selectedCardIndex;
   
@@ -133,6 +134,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       cards = loadedCards;
       recentCards = loadedCards.take(3).toList();
+      favoriteCards = loadedCards.where((card) => card['isFavorite'] == true).take(3).toList();
     });
   }
   
@@ -294,6 +296,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         'cardNumber': result['code'],
                         'color': '#0066CC',
                         'barcodeFormat': result['barcodeFormat'] ?? 'code128',
+                        'category': result['category'] ?? 'Other',
+                        'isFavorite': result['isFavorite'] ?? false,
                       };
                       
                       await CardStorage.addCard(newCard);
@@ -327,6 +331,76 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteCards() {
+    if (favoriteCards.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Favorite Cards',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: favoriteCards.length,
+              itemBuilder: (context, index) {
+                final card = favoriteCards[index];
+                return Container(
+                  width: 200,
+                  margin: EdgeInsets.only(right: index < favoriteCards.length - 1 ? 12 : 0),
+                  child: GestureDetector(
+                    onTap: () => _showCardDetail(card, index),
+                    child: Hero(
+                      tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: LoyaltyCard(
+                          shopName: card['shopName'] ?? '',
+                          description: card['description'] ?? '',
+                          cardNumber: card['cardNumber'] ?? '',
+                          cardColor: ColorUtils.hexToColor(card['color'] ?? '#0066CC'),
+                          category: card['category'],
+                          isFavorite: card['isFavorite'],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -383,6 +457,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           description: card['description'] ?? '',
                           cardNumber: card['cardNumber'] ?? '',
                           cardColor: ColorUtils.hexToColor(card['color'] ?? '#0066CC'),
+                          category: card['category'],
+                          isFavorite: card['isFavorite'],
                         ),
                       ),
                     ),
@@ -440,6 +516,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const SizedBox(height: 24),
                     _buildQuickActions(),
                     const SizedBox(height: 24),
+                    _buildFavoriteCards(),
+                    if (favoriteCards.isNotEmpty) const SizedBox(height: 24),
                     _buildRecentCards(),
                           const SizedBox(height: 24),
                         ],
@@ -593,6 +671,16 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                           children: [
                                                         IconButton(
                                                           onPressed: () async {
+                                                            await CardStorage.toggleFavorite(selectedCard!);
+                                                            await _loadCards();
+                                                          },
+                                                          icon: Icon(
+                                                            selectedCard!['isFavorite'] == true ? Icons.star : Icons.star_border,
+                                                            color: selectedCard!['isFavorite'] == true ? Colors.amber : Colors.white70,
+                                                          ),
+                                                        ),
+                                                        IconButton(
+                                                          onPressed: () async {
                                                             final result = await Navigator.push(
                                                               context,
                                                               FadeScalePageRoute(
@@ -607,6 +695,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                 'cardNumber': result['code'],
                                                                 'color': selectedCard!['color'],
                                                                 'barcodeFormat': result['barcodeFormat'] ?? selectedCard!['barcodeFormat'] ?? 'code128',
+                                                                'category': result['category'] ?? selectedCard!['category'] ?? 'Other',
+                                                                'isFavorite': result['isFavorite'] ?? selectedCard!['isFavorite'] ?? false,
                                                               };
                                                               
                                                               await CardStorage.updateCard(selectedCard!, updatedCard);

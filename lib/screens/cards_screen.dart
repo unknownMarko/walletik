@@ -242,6 +242,8 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
               'cardNumber': result['code'],
               'color': '#0066CC',
               'barcodeFormat': result['barcodeFormat'] ?? 'code128',
+              'category': result['category'] ?? 'Other',
+              'isFavorite': result['isFavorite'] ?? false,
             };
             
             await CardStorage.addCard(newCard);
@@ -319,6 +321,8 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
                                       description: card['description'],
                                       cardNumber: card['cardNumber'],
                                       cardColor: ColorUtils.hexToColor(card['color']),
+                                      category: card['category'],
+                                      isFavorite: card['isFavorite'],
                                     ),
                                   ),
                                 ),
@@ -473,6 +477,16 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
                                                           children: [
                                                         IconButton(
                                                           onPressed: () async {
+                                                            await CardStorage.toggleFavorite(selectedCard!);
+                                                            await _loadCards();
+                                                          },
+                                                          icon: Icon(
+                                                            selectedCard!['isFavorite'] == true ? Icons.star : Icons.star_border,
+                                                            color: selectedCard!['isFavorite'] == true ? Colors.amber : Colors.white70,
+                                                          ),
+                                                        ),
+                                                        IconButton(
+                                                          onPressed: () async {
                                                             final result = await Navigator.push(
                                                               context,
                                                               FadeScalePageRoute(
@@ -487,6 +501,8 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
                                                                 'cardNumber': result['code'],
                                                                 'color': selectedCard!['color'],
                                                                 'barcodeFormat': result['barcodeFormat'] ?? selectedCard!['barcodeFormat'] ?? 'code128',
+                                                                'category': result['category'] ?? selectedCard!['category'] ?? 'Other',
+                                                                'isFavorite': result['isFavorite'] ?? selectedCard!['isFavorite'] ?? false,
                                                               };
                                                               
                                                               await CardStorage.updateCard(selectedCard!, updatedCard);

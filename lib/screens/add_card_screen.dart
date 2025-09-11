@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
+import '../utils/constants.dart';
 
 class AddCardScreen extends StatefulWidget {
   final Map<String, dynamic>? editCard;
@@ -17,6 +18,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController numberController = TextEditingController();
   String barcodeFormat = 'code128';
+  String selectedCategory = 'Other';
+  bool isFavorite = false;
   bool get isEditMode => widget.editCard != null;
 
   @override
@@ -27,6 +30,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
       descriptionController.text = widget.editCard!['description'] ?? '';
       numberController.text = widget.editCard!['cardNumber'] ?? '';
       barcodeFormat = widget.editCard!['barcodeFormat'] ?? 'code128';
+      selectedCategory = widget.editCard!['category'] ?? 'Other';
+      isFavorite = widget.editCard!['isFavorite'] ?? false;
     }
   }
 
@@ -53,6 +58,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
         'description': descriptionController.text,
         'code': numberController.text,
         'barcodeFormat': barcodeFormat,
+        'category': selectedCategory,
+        'isFavorite': isFavorite,
       });
     }
   }
@@ -172,6 +179,76 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   onPressed: _startScan,
                 ),
               ),
+            ),
+            const SizedBox(height: 20),
+
+            // Category dropdown
+            DropdownButtonFormField<String>(
+              initialValue: selectedCategory,
+              decoration: InputDecoration(
+                labelText: "Category",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                ),
+              ),
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              items: AppConstants.cardCategories.map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Row(
+                    children: [
+                      Icon(
+                        AppConstants.categoryIcons[category],
+                        color: AppConstants.categoryColors[category],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        category,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCategory = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Favorite toggle
+            Row(
+              children: [
+                Icon(
+                  Icons.star,
+                  color: isFavorite ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Mark as favorite',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: isFavorite,
+                  onChanged: (value) {
+                    setState(() {
+                      isFavorite = value;
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 30),
 
