@@ -7,11 +7,53 @@ import '../utils/color_utils.dart';
 import 'package:barcode/barcode.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+class FadeScalePageRoute<T> extends PageRoute<T> {
+  final WidgetBuilder builder;
+  
+  FadeScalePageRoute({required this.builder});
+  
+  @override
+  Color? get barrierColor => Colors.black54;
+  
+  @override
+  String? get barrierLabel => null;
+  
+  @override
+  bool get barrierDismissible => false;
+  
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+    return builder(context);
+  }
+  
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(
+          begin: 0.9,
+          end: 1.0,
+        ).animate(CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        )),
+        child: child,
+      ),
+    );
+  }
+  
+  @override
+  bool get maintainState => true;
+  
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 300);
+}
+
 class CardsScreen extends StatefulWidget {
   final Function(bool)? onModalStateChanged;
-  final Function(VoidCallback)? onCloseModalCallback;
   
-  const CardsScreen({super.key, this.onModalStateChanged, this.onCloseModalCallback});
+  const CardsScreen({super.key, this.onModalStateChanged});
 
   @override
   State<CardsScreen> createState() => _CardsScreenState();
@@ -35,7 +77,6 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
   void initState() {
     super.initState();
     _loadCards();
-    widget.onCloseModalCallback?.call(closeModal);
     _searchController.addListener(_filterCards);
     
     _modalController = AnimationController(
@@ -434,7 +475,7 @@ class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin
                                                           onPressed: () async {
                                                             final result = await Navigator.push(
                                                               context,
-                                                              MaterialPageRoute(
+                                                              FadeScalePageRoute(
                                                                 builder: (context) => AddCardScreen(editCard: selectedCard),
                                                               ),
                                                             );

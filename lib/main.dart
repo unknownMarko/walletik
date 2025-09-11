@@ -40,13 +40,37 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
   bool _isModalOpen = false;
-  VoidCallback? _closeCardsModal;
-  VoidCallback? _closeHomeModal;
+  
+  late AnimationController _navBarAnimationController;
+  late Animation<double> _navBarAnimation;
 
+  @override
+  void initState() {
+    super.initState();
+    _navBarAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _navBarAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _navBarAnimationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+  
+  @override
+  void dispose() {
+    _navBarAnimationController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+  
   List<Widget> get _screens => [
     HomeScreen(
       onNavigateToCards: (index) {
@@ -57,70 +81,78 @@ class _MyHomePageState extends State<MyHomePage> {
           curve: Curves.ease,
         );
       },
-      onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
-      onCloseModalCallback: (callback) => _closeHomeModal = callback,
+      onModalStateChanged: (isOpen) {
+        setState(() => _isModalOpen = isOpen);
+        if (isOpen) {
+          _navBarAnimationController.forward();
+        } else {
+          _navBarAnimationController.reverse();
+        }
+      },
     ),
     CardsScreen(
-      onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
-      onCloseModalCallback: (callback) => _closeCardsModal = callback,
+      onModalStateChanged: (isOpen) {
+        setState(() => _isModalOpen = isOpen);
+        if (isOpen) {
+          _navBarAnimationController.forward();
+        } else {
+          _navBarAnimationController.reverse();
+        }
+      },
     ),
     const SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        scaffoldBackgroundColor: Theme.of(context).colorScheme.surface,
+      ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
       body: PageView(
         controller: _pageController,
         physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
         onPageChanged: (index) => setState(() => _currentIndex = index),
         children: _screens,
       ),
-      bottomNavigationBar: _isModalOpen ? 
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-          ),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              _closeCardsModal?.call();
-              _closeHomeModal?.call();
-              setState(() => _isModalOpen = false);
-            },
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              currentIndex: _currentIndex,
-              onTap: null,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-              ],
-            ),
-          ),
-        ) :
-        BottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedIconTheme: const IconThemeData(size: 28),
-          unselectedIconTheme: const IconThemeData(size: 24),
-          onTap: (index) {
-            setState(() => _currentIndex = index);
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.ease,
+        bottomNavigationBar: AnimatedBuilder(
+          animation: _navBarAnimation,
+          builder: (context, child) {
+            if (_navBarAnimation.value < 0.1) {
+              return const SizedBox.shrink();
+            }
+            return ClipRect(
+              child: Transform.translate(
+                offset: Offset(0, 80 * (1 - _navBarAnimation.value)),
+                child: Opacity(
+                  opacity: _navBarAnimation.value,
+                  child: BottomNavigationBar(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    currentIndex: _currentIndex,
+                    selectedIconTheme: const IconThemeData(size: 28),
+                    unselectedIconTheme: const IconThemeData(size: 24),
+                    onTap: _isModalOpen ? null : (index) {
+                      setState(() => _currentIndex = index);
+                      _pageController.animateToPage(
+                        index,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.ease,
+                      );
+                    },
+                    items: const [
+                      BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                      BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
+                      BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+                    ],
+                  ),
+                ),
+              ),
             );
           },
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
         ),
+      ),
     );
   }
 }
