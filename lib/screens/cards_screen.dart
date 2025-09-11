@@ -1,11 +1,23 @@
-import 'package:flutter/material.dart';
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart';
 import '../widgets/background_logo.dart';
 import '../services/card_storage.dart';
-import '../utils/color_utils.dart';
 import 'package:barcode/barcode.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/material.dart';
+
+class ColorUtils {
+  static String colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+  }
+
+  static Color hexToColor(String hex) {
+    final buffer = StringBuffer();
+    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+    buffer.write(hex.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+}
 
 class CardsScreen extends StatefulWidget {
   final Function(bool)? onModalStateChanged;
@@ -20,7 +32,6 @@ class CardsScreen extends StatefulWidget {
 class _CardsScreenState extends State<CardsScreen> {
   List<Map<String, dynamic>> cards = [];
   Map<String, dynamic>? selectedCard;
-
   @override
   void initState() {
     super.initState();
@@ -78,7 +89,7 @@ class _CardsScreenState extends State<CardsScreen> {
                         'shopName': result['name'],
                         'description': result['description'] ?? '',
                         'cardNumber': result['code'],
-                        'color': '#0066CC', // Default blue color
+                        'color': ColorUtils.colorToHex(Color(result['color'])), 
                       };
                       
                       await CardStorage.addCard(newCard);
