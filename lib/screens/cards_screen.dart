@@ -70,9 +70,42 @@ class _CardsScreenState extends State<CardsScreen> {
     }
   }
   
-  String _generateBarcode(String data) {
-    final barcode = Barcode.code128();
-    return barcode.toSvg(data, width: 280, height: 80);
+  String _generateBarcode(String data, String format) {
+    Barcode barcode;
+    switch (format) {
+      case 'qrCode':
+        barcode = Barcode.qrCode();
+        break;
+      case 'ean13':
+        barcode = Barcode.ean13();
+        break;
+      case 'code39':
+        barcode = Barcode.code39();
+        break;
+      case 'pdf417':
+        barcode = Barcode.pdf417();
+        break;
+      case 'ean8':
+        barcode = Barcode.ean8();
+        break;
+      case 'dataMatrix':
+        barcode = Barcode.dataMatrix();
+        break;
+      default:
+        barcode = Barcode.code128();
+    }
+    
+    try {
+      return barcode.toSvg(
+        data, 
+        width: format == 'qrCode' ? 200 : 280, 
+        height: format == 'qrCode' ? 200 : 80
+      );
+    } catch (e) {
+      // Fallback to code128 if format fails
+      final fallbackBarcode = Barcode.code128();
+      return fallbackBarcode.toSvg(data, width: 280, height: 80);
+    }
   }
 
   @override
@@ -92,6 +125,7 @@ class _CardsScreenState extends State<CardsScreen> {
               'description': result['description'] ?? '',
               'cardNumber': result['code'],
               'color': '#0066CC',
+              'barcodeFormat': result['barcodeFormat'] ?? 'code128',
             };
             
             await CardStorage.addCard(newCard);
@@ -132,7 +166,7 @@ class _CardsScreenState extends State<CardsScreen> {
                               Icon(
                                 Icons.wallet_outlined,
                                 size: 64,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -141,7 +175,7 @@ class _CardsScreenState extends State<CardsScreen> {
                                     : 'No matching cards found',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -232,9 +266,12 @@ class _CardsScreenState extends State<CardsScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: SvgPicture.string(
-                                  _generateBarcode(selectedCard!['cardNumber']),
-                                  width: 280,
-                                  height: 80,
+                                  _generateBarcode(
+                                    selectedCard!['cardNumber'], 
+                                    selectedCard!['barcodeFormat'] ?? 'code128'
+                                  ),
+                                  width: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 280,
+                                  height: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 80,
                                 ),
                               ),
                             ),
@@ -242,6 +279,34 @@ class _CardsScreenState extends State<CardsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
+                                IconButton(
+                                  onPressed: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AddCardScreen(editCard: selectedCard),
+                                      ),
+                                    );
+                                    
+                                    if (result != null && result is Map<String, dynamic>) {
+                                      final updatedCard = {
+                                        'shopName': result['name'],
+                                        'description': result['description'] ?? '',
+                                        'cardNumber': result['code'],
+                                        'color': selectedCard!['color'],
+                                        'barcodeFormat': result['barcodeFormat'] ?? selectedCard!['barcodeFormat'] ?? 'code128',
+                                      };
+                                      
+                                      await CardStorage.updateCard(selectedCard!, updatedCard);
+                                      await _loadCards();
+                                      setState(() => selectedCard = null);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white70,
+                                  ),
+                                ),
                                 Container(
                                   width: 40,
                                   height: 40,

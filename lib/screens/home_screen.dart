@@ -121,6 +121,7 @@ class HomeScreenState extends State<HomeScreen> {
                         'description': result['description'] ?? '',
                         'cardNumber': result['code'],
                         'color': '#0066CC',
+                        'barcodeFormat': result['barcodeFormat'] ?? 'code128',
                       };
                       
                       await CardStorage.addCard(newCard);

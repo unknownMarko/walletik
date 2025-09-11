@@ -4,7 +4,9 @@ import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
 
 class AddCardScreen extends StatefulWidget {
-  const AddCardScreen({super.key});
+  final Map<String, dynamic>? editCard;
+  
+  const AddCardScreen({super.key, this.editCard});
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();
@@ -14,6 +16,19 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController numberController = TextEditingController();
+  String barcodeFormat = 'code128';
+  bool get isEditMode => widget.editCard != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditMode) {
+      nameController.text = widget.editCard!['shopName'] ?? '';
+      descriptionController.text = widget.editCard!['description'] ?? '';
+      numberController.text = widget.editCard!['cardNumber'] ?? '';
+      barcodeFormat = widget.editCard!['barcodeFormat'] ?? 'code128';
+    }
+  }
 
   void _startScan() async {
     final result = await Navigator.push(
@@ -23,8 +38,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
       ),
     );
 
-    if (result != null && result is String) {
-      setState(() => numberController.text = result);
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        numberController.text = result['value'] ?? '';
+        barcodeFormat = result['format'] ?? 'code128';
+      });
     }
   }
 
@@ -34,6 +52,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
         'name': nameController.text,
         'description': descriptionController.text,
         'code': numberController.text,
+        'barcodeFormat': barcodeFormat,
       });
     }
   }
@@ -44,13 +63,48 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
     String? svgCode;
     if (code.isNotEmpty) {
-      final barcode = bc.Barcode.code128();
-      svgCode = barcode.toSvg(
-        code,
-        width: 300,
-        height: 100,
-        drawText: false,
-      );
+      bc.Barcode barcode;
+      switch (barcodeFormat) {
+        case 'qrCode':
+          barcode = bc.Barcode.qrCode();
+          break;
+        case 'ean13':
+          barcode = bc.Barcode.ean13();
+          break;
+        case 'code39':
+          barcode = bc.Barcode.code39();
+          break;
+        case 'pdf417':
+          barcode = bc.Barcode.pdf417();
+          break;
+        case 'ean8':
+          barcode = bc.Barcode.ean8();
+          break;
+        case 'dataMatrix':
+          barcode = bc.Barcode.dataMatrix();
+          break;
+        default:
+          barcode = bc.Barcode.code128();
+      }
+      
+      try {
+        svgCode = barcode.toSvg(
+          code,
+          width: barcodeFormat == 'qrCode' ? 200 : 300,
+          height: barcodeFormat == 'qrCode' ? 200 : 100,
+          drawText: false,
+        );
+      } catch (e) {
+        // Fallback to code128 if format fails
+        barcode = bc.Barcode.code128();
+        svgCode = barcode.toSvg(
+          code,
+          width: 300,
+          height: 100,
+          drawText: false,
+        );
+        barcodeFormat = 'code128';
+      }
     }
 
     return Scaffold(
@@ -58,7 +112,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          "Add card",
+          isEditMode ? "Edit card" : "Add card",
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
@@ -139,7 +193,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
               onPressed: _saveCard,
-              child: const Text("Save"),
+              child: Text(isEditMode ? "Update" : "Save"),
             ),
           ],
         ),
@@ -157,6 +211,33 @@ class BarcodeScannerPage extends StatefulWidget {
 
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   bool _hasDetected = false;
+  
+  String _formatToString(BarcodeFormat format) {
+    switch (format) {
+      case BarcodeFormat.qrCode:
+        return 'qrCode';
+      case BarcodeFormat.ean13:
+        return 'ean13';
+      case BarcodeFormat.code39:
+        return 'code39';
+      case BarcodeFormat.pdf417:
+        return 'pdf417';
+      case BarcodeFormat.ean8:
+        return 'ean8';
+      case BarcodeFormat.upcA:
+        return 'upca';
+      case BarcodeFormat.upcE:
+        return 'upce';
+      case BarcodeFormat.itf:
+        return 'itf';
+      case BarcodeFormat.dataMatrix:
+        return 'dataMatrix';
+      case BarcodeFormat.aztec:
+        return 'aztec';
+      default:
+        return 'code128';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,10 +250,14 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           final List<Barcode> barcodes = capture.barcodes;
           if (barcodes.isEmpty) return;
           
-          final String? rawValue = barcodes.first.rawValue;
+          final barcode = barcodes.first;
+          final String? rawValue = barcode.rawValue;
           if (rawValue != null) {
             _hasDetected = true;
-            Navigator.pop(context, rawValue);
+            Navigator.pop(context, {
+              'value': rawValue,
+              'format': _formatToString(barcode.format),
+            });
           }
         },
       ),

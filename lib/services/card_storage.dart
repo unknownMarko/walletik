@@ -41,4 +41,17 @@ class CardStorage {
     await saveCards(cards);
   }
   
+  static Future<void> updateCard(Map<String, dynamic> oldCard, Map<String, dynamic> newCard) async {
+    final cards = await loadCards();
+    final index = cards.indexWhere((card) => 
+      card['shopName'] == oldCard['shopName'] && 
+      card['cardNumber'] == oldCard['cardNumber']
+    );
+    
+    if (index != -1) {
+      cards[index] = newCard;
+      await saveCards(cards);
+    }
+  }
+  
 }
