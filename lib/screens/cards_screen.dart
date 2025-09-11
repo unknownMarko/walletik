@@ -18,7 +18,9 @@ class CardsScreen extends StatefulWidget {
 }
 
 class _CardsScreenState extends State<CardsScreen> {
-  List<Map<String, dynamic>> cards = [];
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> allCards = [];
+  List<Map<String, dynamic>> filteredCards = [];
   Map<String, dynamic>? selectedCard;
 
   @override
@@ -26,12 +28,38 @@ class _CardsScreenState extends State<CardsScreen> {
     super.initState();
     _loadCards();
     widget.onCloseModalCallback?.call(closeModal);
+    _searchController.addListener(_filterCards);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
   
   Future<void> _loadCards() async {
     final loadedCards = await CardStorage.loadCards();
     setState(() {
-      cards = loadedCards;
+      allCards = loadedCards;
+      filteredCards = loadedCards;
+    });
+  }
+
+  void _filterCards() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        filteredCards = allCards;
+      } else {
+        filteredCards = allCards.where((card) {
+          final shopName = (card['shopName'] ?? '').toLowerCase();
+          final description = (card['description'] ?? '').toLowerCase();
+          final cardNumber = (card['cardNumber'] ?? '').toLowerCase();
+          return shopName.contains(query) ||
+              description.contains(query) ||
+              cardNumber.contains(query);
+        }).toList();
+      }
     });
   }
   
@@ -51,70 +79,85 @@ class _CardsScreenState extends State<CardsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddCardScreen()),
+          );
+          
+          if (result != null && result is Map<String, dynamic>) {
+            final newCard = {
+              'shopName': result['name'],
+              'description': result['description'] ?? '',
+              'cardNumber': result['code'],
+              'color': '#0066CC',
+            };
+            
+            await CardStorage.addCard(newCard);
+            await _loadCards();
+          }
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        child: const Icon(Icons.add),
+      ),
       body: BackgroundLogo(
         child: SafeArea(
           child: Stack(
           children: [
-            GridView.builder(
-              padding: const EdgeInsets.all(16),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search cards...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: filteredCards.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.wallet_outlined,
+                                size: 64,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _searchController.text.isEmpty
+                                    ? 'No cards yet'
+                                    : 'No matching cards found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 1.2,
             ),
-            itemCount: cards.length + 1,
+            itemCount: filteredCards.length,
             itemBuilder: (context, index) {
-              if (index == 0) {
-                return GestureDetector(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AddCardScreen()),
-                    );
-                    
-                    if (result != null && result is Map<String, dynamic>) {
-                      final newCard = {
-                        'shopName': result['name'],
-                        'description': result['description'] ?? '',
-                        'cardNumber': result['code'],
-                        'color': '#0066CC', // Default blue color
-                      };
-                      
-                      await CardStorage.addCard(newCard);
-                      await _loadCards();
-                    }
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add,
-                            size: 36,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Add Card',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-              
-              final card = cards[index - 1];
+              final card = filteredCards[index];
               return GestureDetector(
                 onTap: () {
                   setState(() => selectedCard = card);
@@ -128,7 +171,10 @@ class _CardsScreenState extends State<CardsScreen> {
                 ),
               );
             },
-          ),
+                  ),
+                ),
+              ],
+            ),
           if (selectedCard != null)
             GestureDetector(
               onTap: () {
@@ -217,15 +263,16 @@ class _CardsScreenState extends State<CardsScreen> {
                                             ),
                                             TextButton(
                                               onPressed: () async {
+                                                final navigator = Navigator.of(context);
                                                 if (selectedCard != null) {
                                                   await CardStorage.removeCard(selectedCard!);
                                                   await _loadCards();
-                                                  setState(() => selectedCard = null);
-                                                  widget.onModalStateChanged?.call(false);
+                                                  if (mounted) {
+                                                    setState(() => selectedCard = null);
+                                                    widget.onModalStateChanged?.call(false);
+                                                  }
                                                 }
-                                                if (mounted) {
-                                                  Navigator.pop(context);
-                                                }
+                                                navigator.pop();
                                               },
                                               child: const Text('Delete', style: TextStyle(color: Colors.red)),
                                             ),

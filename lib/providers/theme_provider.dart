@@ -16,8 +16,9 @@ class ThemeProvider extends ChangeNotifier {
       return ThemeData(
         colorScheme: const ColorScheme.dark(
           surface: Color(0xFF1b2345),
+          surfaceContainerHighest: Color(0xFF2a3454),
           onSurface: Colors.white,
-          primary: Color(0xFF1b2345),
+          primary: Color(0xFF4a90e2),
           onPrimary: Colors.white,
         ),
         scaffoldBackgroundColor: const Color(0xFF1b2345),

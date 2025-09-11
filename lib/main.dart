@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:walletik/screens/home_screen.dart';
 import 'package:walletik/screens/cards_screen.dart';
-import 'package:walletik/screens/search_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 import 'package:walletik/providers/theme_provider.dart';
 
@@ -47,11 +47,20 @@ class _MyHomePageState extends State<MyHomePage> {
   VoidCallback? _closeCardsModal;
 
   List<Widget> get _screens => [
+    HomeScreen(
+      onNavigateToCards: (index) {
+        setState(() => _currentIndex = index);
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.ease,
+        );
+      },
+    ),
     CardsScreen(
       onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
       onCloseModalCallback: (callback) => _closeCardsModal = callback,
     ),
-    const SearchScreen(),
     const SettingsScreen(),
   ];
 
@@ -80,8 +89,8 @@ class _MyHomePageState extends State<MyHomePage> {
               currentIndex: _currentIndex,
               onTap: null,
               items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
-                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
                 BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
               ],
             ),
@@ -100,8 +109,8 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),
               label: 'Settings',
