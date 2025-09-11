@@ -123,15 +123,15 @@ class _AddCardScreenState extends State<AddCardScreen> {
             // Shop name
             TextField(
               controller: nameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
                 labelText: "Shop name",
-                labelStyle: TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
             ),
@@ -140,15 +140,15 @@ class _AddCardScreenState extends State<AddCardScreen> {
             // Description
             TextField(
               controller: descriptionController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
                 labelText: "Description (optional)",
-                labelStyle: TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
             ),
@@ -157,18 +157,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
             // Card number
             TextField(
               controller: numberController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: "Card number",
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                  icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   onPressed: _startScan,
                 ),
               ),
@@ -179,7 +179,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
             if (svgCode != null)
               Column(
                 children: [
-                  SvgPicture.string(svgCode, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+                  SvgPicture.string(svgCode, colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.onSurface, BlendMode.srcIn)),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -187,8 +187,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
             // Save button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1b2345),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
