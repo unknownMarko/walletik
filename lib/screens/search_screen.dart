@@ -15,7 +15,7 @@ class SearchScreenState extends State<SearchScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
         child: SafeArea(
-          child: Center(child: Text('Search', style: TextStyle(fontSize: 24))),
+          child: const Center(child: Text('Search', style: TextStyle(fontSize: 24))),
         ),
       ),
     );

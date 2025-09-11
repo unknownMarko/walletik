@@ -24,9 +24,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
     );
 
     if (result != null && result is String) {
-      setState(() {
-        numberController.text = result;
-      });
+      setState(() => numberController.text = result);
     }
   }
 
@@ -127,7 +125,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
             if (svgCode != null)
               Column(
                 children: [
-                  SvgPicture.string(svgCode, color: Colors.white),
+                  SvgPicture.string(svgCode, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -166,20 +164,15 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
       appBar: AppBar(title: const Text("Scan Barcode")),
       body: MobileScanner(
         onDetect: (capture) {
-          if (_hasDetected) {
-            return;
-          }
+          if (_hasDetected) return;
 
           final List<Barcode> barcodes = capture.barcodes;
+          if (barcodes.isEmpty) return;
           
-          if (barcodes.isNotEmpty) {
-            final barcode = barcodes.first;
-            final String? rawValue = barcode.rawValue;
-            
-            if (rawValue != null) {
-              _hasDetected = true;
-              Navigator.pop(context, rawValue);
-            }
+          final String? rawValue = barcodes.first.rawValue;
+          if (rawValue != null) {
+            _hasDetected = true;
+            Navigator.pop(context, rawValue);
           }
         },
       ),

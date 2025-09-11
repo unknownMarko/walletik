@@ -13,10 +13,10 @@ class SettingsScreen extends StatefulWidget {
 class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
         title,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -28,43 +28,40 @@ class SettingsScreenState extends State<SettingsScreen> {
       body: BackgroundLogo(
         child: SafeArea(
           child: ListView(
-        padding: EdgeInsets.all(16),  
+        padding: const EdgeInsets.all(16),  
         children: [
           _buildSectionHeader('Appearance'),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.view_list),
             title: Text('Card Display'),
             subtitle: Text('Grid view'),
-            onTap: () {},
           ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ListTile(
-                leading: Icon(Icons.palette),
-                title: Text('Theme Color'),
+                leading: const Icon(Icons.palette),
+                title: const Text('Theme Color'),
                 subtitle: Text(themeProvider.themeName),
                 trailing: Switch(
                   value: themeProvider.isDarkTheme,
-                  onChanged: (val) {
-                    themeProvider.toggleTheme();
-                  },
+                  onChanged: (val) => themeProvider.toggleTheme(),
                 ),
               );
             },
           ),
           _buildSectionHeader('Security'),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.fingerprint),
             title: Text('Biometric Lock'),
-            trailing: Switch(value: false, onChanged: (val) {}),
+            trailing: Switch(value: false, onChanged: null),
           ),
           _buildSectionHeader('About'),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.favorite),
             title: Text('Made with Love by'),
             subtitle: Text('Kati & Marko'),
           ),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.info),
             title: Text('App Version'),
             subtitle: Text('0.0.1'),

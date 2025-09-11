@@ -13,9 +13,9 @@ class CardStorage {
     }
     
     try {
-      final List<dynamic> cardsList = json.decode(cardsJson);
+      final cardsList = json.decode(cardsJson) as List<dynamic>;
       return cardsList.cast<Map<String, dynamic>>();
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
