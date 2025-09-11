@@ -31,11 +31,6 @@ class SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),  
         children: [
           _buildSectionHeader('Appearance'),
-          const ListTile(
-            leading: Icon(Icons.view_list),
-            title: Text('Card Display'),
-            subtitle: Text('Grid view'),
-          ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ListTile(
@@ -48,12 +43,6 @@ class SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-          ),
-          _buildSectionHeader('Security'),
-          const ListTile(
-            leading: Icon(Icons.fingerprint),
-            title: Text('Biometric Lock'),
-            trailing: Switch(value: false, onChanged: null),
           ),
           _buildSectionHeader('About'),
           const ListTile(
