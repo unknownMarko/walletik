@@ -37,9 +37,7 @@ class _CardsScreenState extends State<CardsScreen> {
   
   void closeModal() {
     if (selectedCard != null) {
-      setState(() {
-        selectedCard = null;
-      });
+      setState(() => selectedCard = null);
       widget.onModalStateChanged?.call(false);
     }
   }
@@ -119,9 +117,7 @@ class _CardsScreenState extends State<CardsScreen> {
               final card = cards[index - 1];
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    selectedCard = card;
-                  });
+                  setState(() => selectedCard = card);
                   widget.onModalStateChanged?.call(true);
                 },
                 child: LoyaltyCard(
@@ -136,18 +132,14 @@ class _CardsScreenState extends State<CardsScreen> {
           if (selectedCard != null)
             GestureDetector(
               onTap: () {
-                setState(() {
-                  selectedCard = null;
-                });
+                setState(() => selectedCard = null);
                 widget.onModalStateChanged?.call(false);
               },
               child: Container(
                 color: Colors.black.withValues(alpha: 0.7),
                 child: Center(
                   child: GestureDetector(
-                    onTap: () {
-                      // Prevent closing when tapping the card itself
-                    },
+                    onTap: () {},
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
                       height: 320,
@@ -228,12 +220,12 @@ class _CardsScreenState extends State<CardsScreen> {
                                                 if (selectedCard != null) {
                                                   await CardStorage.removeCard(selectedCard!);
                                                   await _loadCards();
-                                                  setState(() {
-                                                    selectedCard = null;
-                                                  });
+                                                  setState(() => selectedCard = null);
                                                   widget.onModalStateChanged?.call(false);
                                                 }
-                                                Navigator.pop(context);
+                                                if (mounted) {
+                                                  Navigator.pop(context);
+                                                }
                                               },
                                               child: const Text('Delete', style: TextStyle(color: Colors.red)),
                                             ),
@@ -259,9 +251,7 @@ class _CardsScreenState extends State<CardsScreen> {
                         right: 16,
                         child: IconButton(
                           onPressed: () {
-                            setState(() {
-                              selectedCard = null;
-                            });
+                            setState(() => selectedCard = null);
                             widget.onModalStateChanged?.call(false);
                           },
                           icon: const Icon(

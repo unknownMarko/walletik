@@ -48,17 +48,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<Widget> get _screens => [
     CardsScreen(
-      onModalStateChanged: (isOpen) {
-        setState(() {
-          _isModalOpen = isOpen;
-        });
-      },
-      onCloseModalCallback: (callback) {
-        _closeCardsModal = callback;
-      },
+      onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
+      onCloseModalCallback: (callback) => _closeCardsModal = callback,
     ),
-    SearchScreen(),
-    SettingsScreen(),
+    const SearchScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -66,12 +60,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        physics: _isModalOpen ? NeverScrollableScrollPhysics() : null,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
+        onPageChanged: (index) => setState(() => _currentIndex = index),
         children: _screens,
       ),
       bottomNavigationBar: _isModalOpen ? 
@@ -83,21 +73,16 @@ class _MyHomePageState extends State<MyHomePage> {
             behavior: HitTestBehavior.opaque,
             onTap: () {
               _closeCardsModal?.call();
-              setState(() {
-                _isModalOpen = false;
-              });
+              setState(() => _isModalOpen = false);
             },
             child: BottomNavigationBar(
               backgroundColor: Colors.transparent,
               currentIndex: _currentIndex,
               onTap: null,
-              items: [
+              items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
                 BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.settings),
-                  label: 'Settings',
-                ),
+                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
               ],
             ),
           ),
@@ -107,12 +92,10 @@ class _MyHomePageState extends State<MyHomePage> {
           selectedIconTheme: const IconThemeData(size: 28),
           unselectedIconTheme: const IconThemeData(size: 24),
           onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+            setState(() => _currentIndex = index);
             _pageController.animateToPage(
               index,
-              duration: Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 300),
               curve: Curves.ease,
             );
           },
