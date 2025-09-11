@@ -70,11 +70,11 @@ class LoyaltyCard extends StatelessWidget {
                       ),
                       if (category != null)
                         Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -82,14 +82,14 @@ class LoyaltyCard extends StatelessWidget {
                               Icon(
                                 AppConstants.categoryIcons[category!],
                                 color: Colors.white,
-                                size: 12,
+                                size: 10,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Text(
                                 category!,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 10,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -115,7 +115,7 @@ class LoyaltyCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               description,
               style: const TextStyle(
@@ -124,7 +124,7 @@ class LoyaltyCard extends StatelessWidget {
               ),
               overflow: TextOverflow.ellipsis,
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
             const Text(
               'Card Number',
               style: TextStyle(
@@ -132,7 +132,7 @@ class LoyaltyCard extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               cardNumber,
               style: const TextStyle(

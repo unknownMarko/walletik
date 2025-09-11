@@ -372,7 +372,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 140,
+            height: 155,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: favoriteCards.length,
@@ -437,7 +437,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 140,
+            height: 155,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: recentCards.length,
