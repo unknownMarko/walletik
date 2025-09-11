@@ -45,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController();
   bool _isModalOpen = false;
   VoidCallback? _closeCardsModal;
+  VoidCallback? _closeHomeModal;
 
   List<Widget> get _screens => [
     HomeScreen(
@@ -56,6 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
           curve: Curves.ease,
         );
       },
+      onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
+      onCloseModalCallback: (callback) => _closeHomeModal = callback,
     ),
     CardsScreen(
       onModalStateChanged: (isOpen) => setState(() => _isModalOpen = isOpen),
@@ -82,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
             behavior: HitTestBehavior.opaque,
             onTap: () {
               _closeCardsModal?.call();
+              _closeHomeModal?.call();
               setState(() => _isModalOpen = false);
             },
             child: BottomNavigationBar(
