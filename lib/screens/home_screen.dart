@@ -7,12 +7,54 @@ import 'add_card_screen.dart';
 import 'package:barcode/barcode.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+class FadeScalePageRoute<T> extends PageRoute<T> {
+  final WidgetBuilder builder;
+  
+  FadeScalePageRoute({required this.builder});
+  
+  @override
+  Color? get barrierColor => Colors.black54;
+  
+  @override
+  String? get barrierLabel => null;
+  
+  @override
+  bool get barrierDismissible => false;
+  
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+    return builder(context);
+  }
+  
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(
+          begin: 0.9,
+          end: 1.0,
+        ).animate(CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        )),
+        child: child,
+      ),
+    );
+  }
+  
+  @override
+  bool get maintainState => true;
+  
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 300);
+}
+
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToCards;
   final Function(bool)? onModalStateChanged;
-  final Function(VoidCallback)? onCloseModalCallback;
   
-  const HomeScreen({super.key, this.onNavigateToCards, this.onModalStateChanged, this.onCloseModalCallback});
+  const HomeScreen({super.key, this.onNavigateToCards, this.onModalStateChanged});
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -35,7 +77,6 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _loadCards();
-    widget.onCloseModalCallback?.call(closeModal);
     
     _modalController = AnimationController(
       duration: const Duration(milliseconds: 250),
@@ -554,7 +595,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                           onPressed: () async {
                                                             final result = await Navigator.push(
                                                               context,
-                                                              MaterialPageRoute(
+                                                              FadeScalePageRoute(
                                                                 builder: (context) => AddCardScreen(editCard: selectedCard),
                                                               ),
                                                             );
