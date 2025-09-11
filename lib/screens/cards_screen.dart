@@ -17,11 +17,19 @@ class CardsScreen extends StatefulWidget {
   State<CardsScreen> createState() => _CardsScreenState();
 }
 
-class _CardsScreenState extends State<CardsScreen> {
+class _CardsScreenState extends State<CardsScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> allCards = [];
   List<Map<String, dynamic>> filteredCards = [];
   Map<String, dynamic>? selectedCard;
+  int? selectedCardIndex;
+  
+  late AnimationController _modalController;
+  late AnimationController _contentController;
+  late Animation<double> _backgroundAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _contentFadeAnimation;
 
   @override
   void initState() {
@@ -29,11 +37,55 @@ class _CardsScreenState extends State<CardsScreen> {
     _loadCards();
     widget.onCloseModalCallback?.call(closeModal);
     _searchController.addListener(_filterCards);
+    
+    _modalController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    
+    _contentController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.7,
+    ).animate(CurvedAnimation(
+      parent: _modalController,
+      curve: Curves.easeOut,
+    ));
+    
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _modalController,
+      curve: Curves.easeOutBack,
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _modalController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _contentFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _contentController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+    ));
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _modalController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
   
@@ -65,9 +117,33 @@ class _CardsScreenState extends State<CardsScreen> {
   
   void closeModal() {
     if (selectedCard != null) {
-      setState(() => selectedCard = null);
-      widget.onModalStateChanged?.call(false);
+      _contentController.reverse();
+      _modalController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            selectedCard = null;
+            selectedCardIndex = null;
+          });
+          widget.onModalStateChanged?.call(false);
+        }
+      });
     }
+  }
+  
+  void _showCardDetail(Map<String, dynamic> card, int index) {
+    setState(() {
+      selectedCard = card;
+      selectedCardIndex = index;
+    });
+    widget.onModalStateChanged?.call(true);
+    
+    _modalController.reset();
+    _contentController.reset();
+    
+    _modalController.forward();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _contentController.forward();
+    });
   }
   
   String _generateBarcode(String data, String format) {
@@ -102,7 +178,6 @@ class _CardsScreenState extends State<CardsScreen> {
         height: format == 'qrCode' ? 200 : 80
       );
     } catch (e) {
-      // Fallback to code128 if format fails
       final fallbackBarcode = Barcode.code128();
       return fallbackBarcode.toSvg(data, width: 280, height: 80);
     }
@@ -139,248 +214,351 @@ class _CardsScreenState extends State<CardsScreen> {
       body: BackgroundLogo(
         child: SafeArea(
           child: Stack(
-          children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search cards...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+            children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search cards...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
                   ),
-                ),
-                Expanded(
-                  child: filteredCards.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.wallet_outlined,
-                                size: 64,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchController.text.isEmpty
-                                    ? 'No cards yet'
-                                    : 'No matching cards found',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-            ),
-            itemCount: filteredCards.length,
-            itemBuilder: (context, index) {
-              final card = filteredCards[index];
-              return GestureDetector(
-                onTap: () {
-                  setState(() => selectedCard = card);
-                  widget.onModalStateChanged?.call(true);
-                },
-                child: LoyaltyCard(
-                  shopName: card['shopName'],
-                  description: card['description'],
-                  cardNumber: card['cardNumber'],
-                  cardColor: ColorUtils.hexToColor(card['color']),
-                ),
-              );
-            },
-                  ),
-                ),
-              ],
-            ),
-          if (selectedCard != null)
-            GestureDetector(
-              onTap: () {
-                setState(() => selectedCard = null);
-                widget.onModalStateChanged?.call(false);
-              },
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.7),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
-                      height: 320,
-                      decoration: BoxDecoration(
-                        color: ColorUtils.hexToColor(selectedCard!['color']),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              selectedCard!['shopName'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              selectedCard!['description'],
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const Spacer(),
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: SvgPicture.string(
-                                  _generateBarcode(
-                                    selectedCard!['cardNumber'], 
-                                    selectedCard!['barcodeFormat'] ?? 'code128'
-                                  ),
-                                  width: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 280,
-                                  height: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 80,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                  Expanded(
+                    child: filteredCards.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                IconButton(
-                                  onPressed: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => AddCardScreen(editCard: selectedCard),
-                                      ),
-                                    );
-                                    
-                                    if (result != null && result is Map<String, dynamic>) {
-                                      final updatedCard = {
-                                        'shopName': result['name'],
-                                        'description': result['description'] ?? '',
-                                        'cardNumber': result['code'],
-                                        'color': selectedCard!['color'],
-                                        'barcodeFormat': result['barcodeFormat'] ?? selectedCard!['barcodeFormat'] ?? 'code128',
-                                      };
-                                      
-                                      await CardStorage.updateCard(selectedCard!, updatedCard);
-                                      await _loadCards();
-                                      setState(() => selectedCard = null);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.white70,
-                                  ),
+                                Icon(
+                                  Icons.wallet_outlined,
+                                  size: 64,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                                 ),
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: IconButton(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Delete Card'),
-                                          content: Text('Are you sure you want to delete "${selectedCard!['shopName']}" card?'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                            ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                final navigator = Navigator.of(context);
-                                                if (selectedCard != null) {
-                                                  await CardStorage.removeCard(selectedCard!);
-                                                  await _loadCards();
-                                                  if (mounted) {
-                                                    setState(() => selectedCard = null);
-                                                    widget.onModalStateChanged?.call(false);
-                                                  }
-                                                }
-                                                navigator.pop();
-                                              },
-                                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    padding: EdgeInsets.zero,
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchController.text.isEmpty
+                                      ? 'No cards yet'
+                                      : 'No matching cards found',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: IconButton(
-                          onPressed: () {
-                            setState(() => selectedCard = null);
-                            widget.onModalStateChanged?.call(false);
-                          },
-                          icon: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 28,
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.2,
+                            ),
+                            itemCount: filteredCards.length,
+                            itemBuilder: (context, index) {
+                              final card = filteredCards[index];
+                              return GestureDetector(
+                                onTap: () => _showCardDetail(card, index),
+                                child: Hero(
+                                  tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: LoyaltyCard(
+                                      shopName: card['shopName'],
+                                      description: card['description'],
+                                      cardNumber: card['cardNumber'],
+                                      cardColor: ColorUtils.hexToColor(card['color']),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+              if (selectedCard != null)
+                GestureDetector(
+                  onTap: closeModal,
+                  child: AnimatedBuilder(
+                    animation: _backgroundAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        color: Colors.black.withValues(alpha: _backgroundAnimation.value),
+                        child: Center(
+                          child: AnimatedBuilder(
+                            animation: _modalController,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _scaleAnimation.value,
+                                child: SlideTransition(
+                                  position: _slideAnimation,
+                                  child: Hero(
+                                      tag: 'card_${selectedCard!['shopName']}_${selectedCard!['cardNumber']}',
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+                                          height: 320,
+                                          decoration: BoxDecoration(
+                                            color: ColorUtils.hexToColor(selectedCard!['color']),
+                                            borderRadius: BorderRadius.circular(16),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.all(24),
+                                                child: AnimatedBuilder(
+                                                  animation: _contentFadeAnimation,
+                                                  builder: (context, child) {
+                                                    return Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                    FadeTransition(
+                                                      opacity: _contentFadeAnimation,
+                                                      child: SlideTransition(
+                                                        position: Tween<Offset>(
+                                                          begin: const Offset(0, 0.1),
+                                                          end: Offset.zero,
+                                                        ).animate(_contentController),
+                                                        child: Text(
+                                                          selectedCard!['shopName'],
+                                                          style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 22,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    FadeTransition(
+                                                      opacity: Tween<double>(
+                                                        begin: 0.0,
+                                                        end: 1.0,
+                                                      ).animate(CurvedAnimation(
+                                                        parent: _contentController,
+                                                        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+                                                      )),
+                                                      child: SlideTransition(
+                                                        position: Tween<Offset>(
+                                                          begin: const Offset(0, 0.1),
+                                                          end: Offset.zero,
+                                                        ).animate(CurvedAnimation(
+                                                          parent: _contentController,
+                                                          curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+                                                        )),
+                                                        child: Text(
+                                                          selectedCard!['description'],
+                                                          style: const TextStyle(
+                                                            color: Colors.white70,
+                                                            fontSize: 16,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const Spacer(),
+                                                    FadeTransition(
+                                                      opacity: Tween<double>(
+                                                        begin: 0.0,
+                                                        end: 1.0,
+                                                      ).animate(CurvedAnimation(
+                                                        parent: _contentController,
+                                                        curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+                                                      )),
+                                                      child: Transform.scale(
+                                                        scale: Tween<double>(
+                                                          begin: 0.9,
+                                                          end: 1.0,
+                                                        ).animate(CurvedAnimation(
+                                                          parent: _contentController,
+                                                          curve: const Interval(0.5, 1.0, curve: Curves.easeOutBack),
+                                                        )).value,
+                                                        child: Center(
+                                                          child: Container(
+                                                            padding: const EdgeInsets.all(16),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.white,
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            child: SvgPicture.string(
+                                                              _generateBarcode(
+                                                                selectedCard!['cardNumber'], 
+                                                                selectedCard!['barcodeFormat'] ?? 'code128'
+                                                              ),
+                                                              width: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 280,
+                                                              height: selectedCard!['barcodeFormat'] == 'qrCode' ? 200 : 80,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 20),
+                                                    FadeTransition(
+                                                      opacity: Tween<double>(
+                                                        begin: 0.0,
+                                                        end: 1.0,
+                                                      ).animate(CurvedAnimation(
+                                                        parent: _contentController,
+                                                        curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+                                                      )),
+                                                      child: SlideTransition(
+                                                        position: Tween<Offset>(
+                                                          begin: const Offset(0, 0.2),
+                                                          end: Offset.zero,
+                                                        ).animate(CurvedAnimation(
+                                                          parent: _contentController,
+                                                          curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+                                                        )),
+                                                        child: Row(
+                                                          mainAxisAlignment: MainAxisAlignment.end,
+                                                          children: [
+                                                        IconButton(
+                                                          onPressed: () async {
+                                                            final result = await Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (context) => AddCardScreen(editCard: selectedCard),
+                                                              ),
+                                                            );
+                                                            
+                                                            if (result != null && result is Map<String, dynamic>) {
+                                                              final updatedCard = {
+                                                                'shopName': result['name'],
+                                                                'description': result['description'] ?? '',
+                                                                'cardNumber': result['code'],
+                                                                'color': selectedCard!['color'],
+                                                                'barcodeFormat': result['barcodeFormat'] ?? selectedCard!['barcodeFormat'] ?? 'code128',
+                                                              };
+                                                              
+                                                              await CardStorage.updateCard(selectedCard!, updatedCard);
+                                                              await _loadCards();
+                                                              closeModal();
+                                                            }
+                                                          },
+                                                          icon: const Icon(
+                                                            Icons.edit,
+                                                            color: Colors.white70,
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          width: 40,
+                                                          height: 40,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.white.withValues(alpha: 0.1),
+                                                            borderRadius: BorderRadius.circular(20),
+                                                          ),
+                                                          child: IconButton(
+                                                            onPressed: () {
+                                                              showDialog(
+                                                                context: context,
+                                                                builder: (BuildContext context) {
+                                                                  return AlertDialog(
+                                                                    title: const Text('Delete Card'),
+                                                                    content: Text('Are you sure you want to delete ${selectedCard!['shopName']}?'),
+                                                                    actions: [
+                                                                      TextButton(
+                                                                        onPressed: () => Navigator.pop(context),
+                                                                        child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                                                                      ),
+                                                                      TextButton(
+                                                                        onPressed: () async {
+                                                                          final navigator = Navigator.of(context);
+                                                                          if (selectedCard != null) {
+                                                                            await CardStorage.removeCard(selectedCard!);
+                                                                            await _loadCards();
+                                                                            if (mounted) {
+                                                                              closeModal();
+                                                                            }
+                                                                          }
+                                                                          navigator.pop();
+                                                                        },
+                                                                        child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                                      ),
+                                                                    ],
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                            icon: const Icon(
+                                                              Icons.delete,
+                                                              color: Colors.white,
+                                                              size: 20,
+                                                            ),
+                                                            padding: EdgeInsets.zero,
+                                                          ),
+                                                        ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                      ],
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              Positioned(
+                                                top: 16,
+                                                right: 16,
+                                                child: FadeTransition(
+                                                  opacity: Tween<double>(
+                                                    begin: 0.0,
+                                                    end: 1.0,
+                                                  ).animate(CurvedAnimation(
+                                                    parent: _contentController,
+                                                    curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+                                                  )),
+                                                  child: Transform.scale(
+                                                    scale: Tween<double>(
+                                                      begin: 0.8,
+                                                      end: 1.0,
+                                                    ).animate(CurvedAnimation(
+                                                      parent: _contentController,
+                                                      curve: const Interval(0.8, 1.0, curve: Curves.easeOutBack),
+                                                    )).value,
+                                                    child: IconButton(
+                                                      onPressed: closeModal,
+                                                      icon: const Icon(
+                                                        Icons.close,
+                                                        color: Colors.white,
+                                                        size: 28,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                            },
                           ),
                         ),
-                      ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ),
-          ),
-        ],
+            ],
           ),
         ),
       ),
