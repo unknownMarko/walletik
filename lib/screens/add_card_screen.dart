@@ -116,6 +116,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
@@ -124,9 +125,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            children: [
             // Shop name
             TextField(
               controller: nameController,
@@ -272,7 +275,9 @@ class _AddCardScreenState extends State<AddCardScreen> {
               onPressed: _saveCard,
               child: Text(isEditMode ? "Update" : "Save"),
             ),
-          ],
+            const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
