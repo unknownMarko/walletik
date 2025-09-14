@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
+import '../utils/constants.dart';
 
 class AddCardScreen extends StatefulWidget {
-  const AddCardScreen({super.key});
+  final Map<String, dynamic>? editCard;
+  
+  const AddCardScreen({super.key, this.editCard});
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();
@@ -14,8 +17,23 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController numberController = TextEditingController();
+  String barcodeFormat = 'code128';
+  String selectedCategory = 'Other';
+  bool isFavorite = false;
+  bool get isEditMode => widget.editCard != null;
 
-  Color selectedColor = Colors.blue;
+  @override
+  void initState() {
+    super.initState();
+    if (isEditMode) {
+      nameController.text = widget.editCard!['shopName'] ?? '';
+      descriptionController.text = widget.editCard!['description'] ?? '';
+      numberController.text = widget.editCard!['cardNumber'] ?? '';
+      barcodeFormat = widget.editCard!['barcodeFormat'] ?? 'code128';
+      selectedCategory = widget.editCard!['category'] ?? 'Other';
+      isFavorite = widget.editCard!['isFavorite'] ?? false;
+    }
+  }
 
   void _startScan() async {
     final result = await Navigator.push(
@@ -25,8 +43,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
       ),
     );
 
-    if (result != null && result is String) {
-      setState(() => numberController.text = result);
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        numberController.text = result['value'] ?? '';
+        barcodeFormat = result['format'] ?? 'code128';
+      });
     }
   }
 
@@ -36,7 +57,9 @@ class _AddCardScreenState extends State<AddCardScreen> {
         'name': nameController.text,
         'description': descriptionController.text,
         'code': numberController.text,
-        'color': selectedColor.value, 
+        'barcodeFormat': barcodeFormat,
+        'category': selectedCategory,
+        'isFavorite': isFavorite,
       });
     }
   }
@@ -47,146 +70,212 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
     String? svgCode;
     if (code.isNotEmpty) {
-      final barcode = bc.Barcode.code128();
-      svgCode = barcode.toSvg(
-        code,
-        width: 300,
-        height: 100,
-        drawText: false,
-      );
+      bc.Barcode barcode;
+      switch (barcodeFormat) {
+        case 'qrCode':
+          barcode = bc.Barcode.qrCode();
+          break;
+        case 'ean13':
+          barcode = bc.Barcode.ean13();
+          break;
+        case 'code39':
+          barcode = bc.Barcode.code39();
+          break;
+        case 'pdf417':
+          barcode = bc.Barcode.pdf417();
+          break;
+        case 'ean8':
+          barcode = bc.Barcode.ean8();
+          break;
+        case 'dataMatrix':
+          barcode = bc.Barcode.dataMatrix();
+          break;
+        default:
+          barcode = bc.Barcode.code128();
+      }
+      
+      try {
+        svgCode = barcode.toSvg(
+          code,
+          width: barcodeFormat == 'qrCode' ? 200 : 300,
+          height: barcodeFormat == 'qrCode' ? 200 : 100,
+          drawText: false,
+        );
+      } catch (e) {
+        // Fallback to code128 if format fails
+        barcode = bc.Barcode.code128();
+        svgCode = barcode.toSvg(
+          code,
+          width: 300,
+          height: 100,
+          drawText: false,
+        );
+        barcodeFormat = 'code128';
+      }
     }
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          "Add card",
+          isEditMode ? "Edit card" : "Add card",
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView( 
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Shop name
-              TextField(
-                controller: nameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Shop name",
-                  labelStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+            // Shop name
+            TextField(
+              controller: nameController,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
+                labelText: "Shop name",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-              // Description
-              TextField(
-                controller: descriptionController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Description (optional)",
-                  labelStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+            // Description
+            TextField(
+              controller: descriptionController,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
+                labelText: "Description (optional)",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-              // Card number
-              TextField(
-                controller: numberController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Card number",
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white70),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                    onPressed: _startScan,
-                  ),
+            // Card number
+            TextField(
+              controller: numberController,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
+                labelText: "Card number",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  onPressed: _startScan,
                 ),
               ),
-              const SizedBox(height: 30),
+            ),
+            const SizedBox(height: 20),
 
-              // Generated barcode
-              if (svgCode != null)
-                Column(
-                  children: [
-                    SvgPicture.string(
-                      svgCode,
-                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
+            // Category dropdown
+            DropdownButtonFormField<String>(
+              initialValue: selectedCategory,
+              decoration: InputDecoration(
+                labelText: "Category",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
-
-              // Palette
-              const Text(
-                "Choose card color:",
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                ),
               ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 12,
-                children: [
-                  Colors.red,
-                  Colors.green,
-                  Colors.blue,
-                  Colors.orange,
-                  Colors.purple,
-                  Colors.teal,
-                  Colors.grey,
-                ].map((color) {
-                  final bool isSelected = color == selectedColor;
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedColor = color),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(color: Colors.white, width: 3)
-                            : null,
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              items: AppConstants.cardCategories.map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Row(
+                    children: [
+                      Icon(
+                        AppConstants.categoryIcons[category],
+                        color: AppConstants.categoryColors[category],
+                        size: 20,
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 40),
-
-              // Save button
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1b2345),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      const SizedBox(width: 12),
+                      Text(
+                        category,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                    ],
                   ),
-                  onPressed: _saveCard,
-                  child: const Text("Save"),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCategory = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Favorite toggle
+            Row(
+              children: [
+                Icon(
+                  Icons.star,
+                  color: isFavorite ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Mark as favorite',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: isFavorite,
+                  onChanged: (value) {
+                    setState(() {
+                      isFavorite = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // Generated barcode
+            if (svgCode != null)
+              Column(
+                children: [
+                  SvgPicture.string(svgCode, colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.onSurface, BlendMode.srcIn)),
+                  const SizedBox(height: 30),
+                ],
               ),
+
+            // Save button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              ),
+              onPressed: _saveCard,
+              child: Text(isEditMode ? "Update" : "Save"),
+            ),
+            const SizedBox(height: 40),
             ],
           ),
         ),
@@ -204,6 +293,33 @@ class BarcodeScannerPage extends StatefulWidget {
 
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   bool _hasDetected = false;
+  
+  String _formatToString(BarcodeFormat format) {
+    switch (format) {
+      case BarcodeFormat.qrCode:
+        return 'qrCode';
+      case BarcodeFormat.ean13:
+        return 'ean13';
+      case BarcodeFormat.code39:
+        return 'code39';
+      case BarcodeFormat.pdf417:
+        return 'pdf417';
+      case BarcodeFormat.ean8:
+        return 'ean8';
+      case BarcodeFormat.upcA:
+        return 'upca';
+      case BarcodeFormat.upcE:
+        return 'upce';
+      case BarcodeFormat.itf:
+        return 'itf';
+      case BarcodeFormat.dataMatrix:
+        return 'dataMatrix';
+      case BarcodeFormat.aztec:
+        return 'aztec';
+      default:
+        return 'code128';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,11 +331,15 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
           final List<Barcode> barcodes = capture.barcodes;
           if (barcodes.isEmpty) return;
-
-          final String? rawValue = barcodes.first.rawValue;
+          
+          final barcode = barcodes.first;
+          final String? rawValue = barcode.rawValue;
           if (rawValue != null) {
             _hasDetected = true;
-            Navigator.pop(context, rawValue);
+            Navigator.pop(context, {
+              'value': rawValue,
+              'format': _formatToString(barcode.format),
+            });
           }
         },
       ),
