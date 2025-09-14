@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/constants.dart';
 
 class LoyaltyCard extends StatelessWidget {
   final String shopName;
@@ -6,6 +7,8 @@ class LoyaltyCard extends StatelessWidget {
   final String cardNumber;
   final Color cardColor;
   final String? logoUrl;
+  final String? category;
+  final bool? isFavorite;
 
   const LoyaltyCard({
     super.key,
@@ -14,6 +17,8 @@ class LoyaltyCard extends StatelessWidget {
     required this.cardNumber,
     required this.cardColor,
     this.logoUrl,
+    this.category,
+    this.isFavorite,
   });
 
   @override
@@ -39,14 +44,59 @@ class LoyaltyCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    shopName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              shopName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isFavorite == true)
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                        ],
+                      ),
+                      if (category != null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                AppConstants.categoryIcons[category!],
+                                color: Colors.white,
+                                size: 10,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                category!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (logoUrl != null)
@@ -65,7 +115,7 @@ class LoyaltyCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               description,
               style: const TextStyle(
@@ -74,7 +124,7 @@ class LoyaltyCard extends StatelessWidget {
               ),
               overflow: TextOverflow.ellipsis,
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
             const Text(
               'Card Number',
               style: TextStyle(
@@ -82,7 +132,7 @@ class LoyaltyCard extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               cardNumber,
               style: const TextStyle(
