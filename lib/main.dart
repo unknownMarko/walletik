@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:walletik/screens/home_screen.dart';
 import 'package:walletik/screens/cards_screen.dart';
+import 'package:walletik/screens/shopping_list_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 import 'package:walletik/providers/theme_provider.dart';
 
@@ -100,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         }
       },
     ),
+    const ShoppingListScreen(),
     const SettingsScreen(),
   ];
 
@@ -144,6 +146,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     items: const [
                       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                       BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'My Cards'),
+                      BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
                       BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
                     ],
                   ),
