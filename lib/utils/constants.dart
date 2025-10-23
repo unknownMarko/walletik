@@ -36,4 +36,20 @@ class AppConstants {
     'Travel': Colors.indigo,
     'Other': Colors.grey,
   };
+
+  // Card Background Colors (Predefined Palette)
+  static const List<String> cardBackgroundColors = [
+    '#0066CC', // Blue
+    '#E74C3C', // Red
+    '#27AE60', // Green
+    '#9B59B6', // Purple
+    '#F39C12', // Orange
+    '#16A085', // Teal
+    '#E91E63', // Pink
+    '#3498DB', // Light Blue
+    '#2ECC71', // Light Green
+    '#F1C40F', // Yellow
+    '#34495E', // Dark Gray
+    '#1ABC9C', // Turquoise
+  ];
 }

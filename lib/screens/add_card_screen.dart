@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/constants.dart';
+import '../utils/color_utils.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddCardScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   String barcodeFormat = 'code128';
   String selectedCategory = 'Other';
   bool isFavorite = false;
+  String selectedColor = '#0066CC';
   bool get isEditMode => widget.editCard != null;
 
   @override
@@ -32,6 +34,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
       barcodeFormat = widget.editCard!['barcodeFormat'] ?? 'code128';
       selectedCategory = widget.editCard!['category'] ?? 'Other';
       isFavorite = widget.editCard!['isFavorite'] ?? false;
+      selectedColor = widget.editCard!['color'] ?? '#0066CC';
     }
   }
 
@@ -52,16 +55,35 @@ class _AddCardScreenState extends State<AddCardScreen> {
   }
 
   void _saveCard() {
-    if (nameController.text.isNotEmpty && numberController.text.isNotEmpty) {
-      Navigator.pop(context, {
-        'name': nameController.text,
-        'description': descriptionController.text,
-        'code': numberController.text,
-        'barcodeFormat': barcodeFormat,
-        'category': selectedCategory,
-        'isFavorite': isFavorite,
-      });
+    if (nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a shop name'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    if (numberController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a card number'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(context, {
+      'name': nameController.text,
+      'description': descriptionController.text,
+      'code': numberController.text,
+      'barcodeFormat': barcodeFormat,
+      'category': selectedCategory,
+      'isFavorite': isFavorite,
+      'color': selectedColor,
+    });
   }
 
   @override
@@ -250,6 +272,65 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       isFavorite = value;
                     });
                   },
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // Card Color Picker
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Card Color',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: AppConstants.cardBackgroundColors.map((color) {
+                    final isSelected = selectedColor == color;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedColor = color;
+                        });
+                      },
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: ColorUtils.hexToColor(color),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 24,
+                              )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ),

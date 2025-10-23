@@ -336,7 +336,7 @@ class _CardsScreenState extends State<CardsScreen>
                                   'shopName': result['name'],
                                   'description': result['description'] ?? '',
                                   'cardNumber': result['code'],
-                                  'color': '#0066CC',
+                                  'color': result['color'] ?? '#0066CC',
                                   'barcodeFormat':
                                       result['barcodeFormat'] ?? 'code128',
                                   'category': result['category'] ?? 'Other',
@@ -828,6 +828,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                       'cardNumber':
                                                                           result['code'],
                                                                       'color':
+                                                                          result['color'] ??
                                                                           selectedCard!['color'],
                                                                       'barcodeFormat':
                                                                           result['barcodeFormat'] ??

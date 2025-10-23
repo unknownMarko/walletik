@@ -301,7 +301,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         'shopName': result['name'],
                         'description': result['description'] ?? '',
                         'cardNumber': result['code'],
-                        'color': '#0066CC',
+                        'color': result['color'] ?? '#0066CC',
                         'barcodeFormat': result['barcodeFormat'] ?? 'code128',
                         'category': result['category'] ?? 'Other',
                         'isFavorite': result['isFavorite'] ?? false,
@@ -865,6 +865,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                       'cardNumber':
                                                                           result['code'],
                                                                       'color':
+                                                                          result['color'] ??
                                                                           selectedCard!['color'],
                                                                       'barcodeFormat':
                                                                           result['barcodeFormat'] ??
