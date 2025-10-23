@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart';
 import '../widgets/background_logo.dart';
@@ -69,8 +70,12 @@ class _CardsScreenState extends State<CardsScreen>
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> allCards = [];
   List<Map<String, dynamic>> filteredCards = [];
+  List<Map<String, dynamic>> displayCards = []; // For preview during drag
   Map<String, dynamic>? selectedCard;
   int? selectedCardIndex;
+  Map<String, dynamic>? draggingCard;
+  int? hoverIndex;
+  Timer? _previewTimer;
 
   late AnimationController _modalController;
   late AnimationController _contentController;
@@ -122,6 +127,7 @@ class _CardsScreenState extends State<CardsScreen>
     _searchController.dispose();
     _modalController.dispose();
     _contentController.dispose();
+    _previewTimer?.cancel();
     super.dispose();
   }
 
@@ -130,7 +136,29 @@ class _CardsScreenState extends State<CardsScreen>
     setState(() {
       allCards = loadedCards;
       filteredCards = loadedCards;
+      displayCards = List.from(loadedCards);
     });
+  }
+
+  Future<void> _onCardReorder(int fromIndex, int toIndex) async {
+    setState(() {
+      final card = filteredCards.removeAt(fromIndex);
+      filteredCards.insert(toIndex, card);
+      
+      // Also update allCards to maintain consistency
+      final cardIndex = allCards.indexWhere((c) => 
+        c['shopName'] == card['shopName'] && c['cardNumber'] == card['cardNumber']);
+      if (cardIndex != -1) {
+        allCards.removeAt(cardIndex);
+        allCards.insert(toIndex.clamp(0, allCards.length), card);
+      }
+      
+      // Update display cards to match the new order
+      displayCards = List.from(filteredCards);
+    });
+    
+    // Save the new order to storage
+    await CardStorage.saveCards(allCards);
   }
 
   void _filterCards() {
@@ -148,6 +176,39 @@ class _CardsScreenState extends State<CardsScreen>
               cardNumber.contains(query);
         }).toList();
       }
+      displayCards = List.from(filteredCards);
+    });
+  }
+
+  void _updatePreviewOrder(Map<String, dynamic> draggedCard, int targetIndex) {
+    setState(() {
+      final draggedIndex = filteredCards.indexWhere((c) => 
+        c['shopName'] == draggedCard['shopName'] && c['cardNumber'] == draggedCard['cardNumber']);
+      
+      if (draggedIndex != -1) {
+        displayCards = List.from(filteredCards);
+        final card = displayCards.removeAt(draggedIndex);
+        displayCards.insert(targetIndex, card);
+        draggingCard = draggedCard;
+        hoverIndex = targetIndex;
+      }
+    });
+  }
+
+  void _resetPreview() {
+    _previewTimer?.cancel();
+    _previewTimer = null;
+    setState(() {
+      displayCards = List.from(filteredCards);
+      draggingCard = null;
+      hoverIndex = null;
+    });
+  }
+
+  void _startPreviewTimer(Map<String, dynamic> draggedCard, int targetIndex) {
+    _previewTimer?.cancel();
+    _previewTimer = Timer(const Duration(milliseconds: 150), () {
+      _updatePreviewOrder(draggedCard, targetIndex);
     });
   }
 
@@ -256,9 +317,9 @@ class _CardsScreenState extends State<CardsScreen>
                             mainAxisSpacing: 12,
                             childAspectRatio: 1.2,
                           ),
-                      itemCount: filteredCards.length + 1,
+                      itemCount: displayCards.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == filteredCards.length) {
+                        if (index == displayCards.length) {
                           // Add Card button
                           return GestureDetector(
                             onTap: () async {
@@ -325,25 +386,130 @@ class _CardsScreenState extends State<CardsScreen>
                           );
                         } else {
                           // Existing card
-                          final card = filteredCards[index];
-                          return GestureDetector(
-                            onTap: () => _showCardDetail(card, index),
-                            child: Hero(
-                              tag:
-                                  'card_${card['shopName']}_${card['cardNumber']}',
-                              child: Material(
-                                color: Colors.transparent,
-                                child: LoyaltyCard(
-                                  shopName: card['shopName'],
-                                  description: card['description'],
-                                  cardNumber: card['cardNumber'],
-                                  cardColor: ColorUtils.hexToColor(
-                                    card['color'],
+                          final card = displayCards[index];
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            transitionBuilder: (child, animation) {
+                              return ScaleTransition(
+                                scale: animation,
+                                child: child,
+                              );
+                            },
+                            child: DragTarget<Map<String, dynamic>>(
+                              key: ValueKey('${card['shopName']}_${card['cardNumber']}_$index'),
+                            onWillAcceptWithDetails: (details) => details.data != card,
+                            onMove: (details) {
+                              _startPreviewTimer(details.data, index);
+                            },
+                            onLeave: (data) {
+                              _resetPreview();
+                            },
+                            onAcceptWithDetails: (details) {
+                              final draggedCard = details.data;
+                              final fromIndex = filteredCards.indexWhere((c) => 
+                                c['shopName'] == draggedCard['shopName'] && 
+                                c['cardNumber'] == draggedCard['cardNumber']);
+                              if (fromIndex != -1) {
+                                _onCardReorder(fromIndex, index);
+                              }
+                              _resetPreview();
+                            },
+                            builder: (context, candidateData, rejectedData) {
+                              final isHovering = candidateData.isNotEmpty;
+                              return AnimatedScale(
+                                scale: isHovering ? 0.97 : 1.0,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  transform: isHovering ? Matrix4.translationValues(0, -5, 0) : Matrix4.identity(),
+                                  child: LongPressDraggable<Map<String, dynamic>>(
+                                data: card,
+                                feedback: Material(
+                                  elevation: 8,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    width: 150,
+                                    height: 125,
+                                    decoration: BoxDecoration(
+                                      color: ColorUtils.hexToColor(card['color']),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Opacity(
+                                      opacity: 0.9,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              card['shopName'],
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              card['cardNumber'],
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 11,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  category: card['category'],
-                                  isFavorite: card['isFavorite'],
                                 ),
-                              ),
+                                childWhenDragging: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                                      width: 2,
+                                      style: BorderStyle.solid,
+                                    ),
+                                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.drag_indicator,
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                                      size: 32,
+                                    ),
+                                  ),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => _showCardDetail(card, index),
+                                  child: Hero(
+                                    tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: LoyaltyCard(
+                                        shopName: card['shopName'],
+                                        description: card['description'],
+                                        cardNumber: card['cardNumber'],
+                                        cardColor: ColorUtils.hexToColor(
+                                          card['color'],
+                                        ),
+                                        category: card['category'],
+                                        isFavorite: card['isFavorite'],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                  ),
+                                ),
+                              );
+                            },
                             ),
                           );
                         }

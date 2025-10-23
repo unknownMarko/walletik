@@ -45,6 +45,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
   bool _isModalOpen = false;
+  bool _isNavigating = false;
+  int? _targetIndex;
   
   late AnimationController _navBarAnimationController;
   late Animation<double> _navBarAnimation;
@@ -116,7 +118,21 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       body: PageView(
         controller: _pageController,
         physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
-        onPageChanged: (index) => setState(() => _currentIndex = index),
+        onPageChanged: (index) {
+          // Ignore intermediate page changes during navigation to non-adjacent screens
+          if (_isNavigating && _targetIndex != null && index != _targetIndex) {
+            return;
+          }
+          
+          setState(() {
+            _currentIndex = index;
+            // Reset navigation state when we reach the target
+            if (_isNavigating && index == _targetIndex) {
+              _isNavigating = false;
+              _targetIndex = null;
+            }
+          });
+        },
         children: _screens,
       ),
         bottomNavigationBar: AnimatedBuilder(
@@ -136,7 +152,21 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     selectedIconTheme: const IconThemeData(size: 28),
                     unselectedIconTheme: const IconThemeData(size: 24),
                     onTap: _isModalOpen ? null : (index) {
-                      setState(() => _currentIndex = index);
+                      // Check if we're navigating to a non-adjacent screen
+                      final isNonAdjacent = (index - _currentIndex).abs() > 1;
+                      
+                      if (isNonAdjacent) {
+                        // For non-adjacent screens, immediately update UI and track navigation
+                        setState(() {
+                          _currentIndex = index;
+                          _isNavigating = true;
+                          _targetIndex = index;
+                        });
+                      } else {
+                        // For adjacent screens, update normally
+                        setState(() => _currentIndex = index);
+                      }
+                      
                       _pageController.animateToPage(
                         index,
                         duration: const Duration(milliseconds: 300),

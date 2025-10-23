@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../widgets/background_logo.dart';
 import '../services/shopping_list_storage.dart';
 
@@ -11,8 +12,6 @@ class ShoppingListScreen extends StatefulWidget {
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
   List<Map<String, dynamic>> allItems = [];
-  List<Map<String, dynamic>> filteredItems = [];
-  final TextEditingController _searchController = TextEditingController();
   
   final List<String> categories = [
     'Groceries',
@@ -27,12 +26,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   void initState() {
     super.initState();
     _loadItems();
-    _searchController.addListener(_filterItems);
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -40,27 +37,22 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final items = await ShoppingListStorage.loadItems();
     setState(() {
       allItems = items;
-      filteredItems = items;
     });
   }
 
-  void _filterItems() {
-    final query = _searchController.text.toLowerCase();
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
     setState(() {
-      if (query.isEmpty) {
-        filteredItems = allItems;
-      } else {
-        filteredItems = allItems.where((item) {
-          final name = (item['name'] ?? '').toLowerCase();
-          final category = (item['category'] ?? '').toLowerCase();
-          final notes = (item['notes'] ?? '').toLowerCase();
-          return name.contains(query) || 
-                 category.contains(query) || 
-                 notes.contains(query);
-        }).toList();
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
       }
+      final item = allItems.removeAt(oldIndex);
+      allItems.insert(newIndex, item);
     });
+    
+    // Save the new order to storage
+    await ShoppingListStorage.saveItems(allItems);
   }
+
 
   Future<void> _toggleItemCompletion(Map<String, dynamic> item) async {
     await ShoppingListStorage.toggleItemCompletion(item);
@@ -238,8 +230,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final completedItems = filteredItems.where((item) => item['isCompleted'] == true).toList();
-    final pendingItems = filteredItems.where((item) => item['isCompleted'] != true).toList();
+    final completedItems = allItems.where((item) => item['isCompleted'] == true).toList();
+    final pendingItems = allItems.where((item) => item['isCompleted'] != true).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -247,51 +239,48 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search items...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+              if (allItems.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${pendingItems.length} pending, ${completedItems.length} completed',
+                        style: TextStyle(
+                          color: isDarkTheme ? Colors.white70 : Colors.black54,
+                          fontSize: 14,
                         ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
-                    ),
-                    if (allItems.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${pendingItems.length} pending, ${completedItems.length} completed',
+                      Visibility(
+                        visible: completedItems.isNotEmpty,
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        child: InkWell(
+                          onTap: () async {
+                            await ShoppingListStorage.clearCompleted();
+                            await _loadItems();
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Text(
+                              'Clear completed',
                               style: TextStyle(
-                                color: isDarkTheme ? Colors.white70 : Colors.black54,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            if (completedItems.isNotEmpty)
-                              TextButton(
-                                onPressed: () async {
-                                  await ShoppingListStorage.clearCompleted();
-                                  await _loadItems();
-                                },
-                                child: const Text('Clear completed'),
-                              ),
-                          ],
+                          ),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               Expanded(
-                child: filteredItems.isEmpty
+                child: allItems.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -303,9 +292,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              allItems.isEmpty 
-                                  ? 'Your shopping list is empty'
-                                  : 'No items found',
+                              'Your shopping list is empty',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: isDarkTheme ? Colors.white70 : Colors.black54,
@@ -313,9 +300,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              allItems.isEmpty 
-                                  ? 'Tap + to add your first item'
-                                  : 'Try a different search',
+                              'Tap + to add your first item',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDarkTheme ? Colors.white54 : Colors.black38,
@@ -324,11 +309,36 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
+                    : ReorderableListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filteredItems.length,
+                        itemCount: allItems.length,
+                        onReorder: _onReorder,
+                        proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                          return AnimatedBuilder(
+                            animation: animation,
+                            builder: (BuildContext context, Widget? child) {
+                              final double animValue = Curves.easeInOut.transform(animation.value);
+                              final double elevation = lerpDouble(0, 8, animValue)!;
+                              final double scale = lerpDouble(1, 1.05, animValue)!;
+                              
+                              return Transform.scale(
+                                scale: scale,
+                                child: Material(
+                                  elevation: elevation,
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Opacity(
+                                    opacity: 0.95,
+                                    child: child,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: child,
+                          );
+                        },
                         itemBuilder: (context, index) {
-                          final item = filteredItems[index];
+                          final item = allItems[index];
                           final isCompleted = item['isCompleted'] == true;
                           
                           return Dismissible(
@@ -425,7 +435,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditDialog(),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
