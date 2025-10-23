@@ -49,8 +49,34 @@ class ThemeProvider extends ChangeNotifier {
       return ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.black),
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+        ),
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.all(Colors.black54),
+          ),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.blue;
+            }
+            return Colors.grey.shade400;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.blue.withValues(alpha: 0.3);
+            }
+            return Colors.grey.withValues(alpha: 0.3);
+          }),
         ),
       );
     }

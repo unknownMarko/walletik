@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/constants.dart';
+import 'barcode_scanner_screen.dart';
 
 class AddCardScreen extends StatefulWidget {
   final Map<String, dynamic>? editCard;
@@ -39,13 +39,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const BarcodeScannerPage(),
+        builder: (context) => const BarcodeScannerScreen(),
       ),
     );
 
-    if (result != null && result is Map<String, String>) {
+    if (result != null && result is Map<String, dynamic>) {
       setState(() {
-        numberController.text = result['value'] ?? '';
+        numberController.text = result['code'] ?? '';
         barcodeFormat = result['format'] ?? 'code128';
       });
     }
@@ -279,69 +279,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class BarcodeScannerPage extends StatefulWidget {
-  const BarcodeScannerPage({super.key});
-
-  @override
-  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
-}
-
-class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
-  bool _hasDetected = false;
-  
-  String _formatToString(BarcodeFormat format) {
-    switch (format) {
-      case BarcodeFormat.qrCode:
-        return 'qrCode';
-      case BarcodeFormat.ean13:
-        return 'ean13';
-      case BarcodeFormat.code39:
-        return 'code39';
-      case BarcodeFormat.pdf417:
-        return 'pdf417';
-      case BarcodeFormat.ean8:
-        return 'ean8';
-      case BarcodeFormat.upcA:
-        return 'upca';
-      case BarcodeFormat.upcE:
-        return 'upce';
-      case BarcodeFormat.itf:
-        return 'itf';
-      case BarcodeFormat.dataMatrix:
-        return 'dataMatrix';
-      case BarcodeFormat.aztec:
-        return 'aztec';
-      default:
-        return 'code128';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Scan Barcode")),
-      body: MobileScanner(
-        onDetect: (capture) {
-          if (_hasDetected) return;
-
-          final List<Barcode> barcodes = capture.barcodes;
-          if (barcodes.isEmpty) return;
-          
-          final barcode = barcodes.first;
-          final String? rawValue = barcode.rawValue;
-          if (rawValue != null) {
-            _hasDetected = true;
-            Navigator.pop(context, {
-              'value': rawValue,
-              'format': _formatToString(barcode.format),
-            });
-          }
-        },
       ),
     );
   }
