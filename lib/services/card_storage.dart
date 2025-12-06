@@ -213,9 +213,10 @@ class CardStorage {
 
   static Future<void> processPendingSync() async {
     debugPrint('Processing pending sync operations...');
-    await SyncQueueService.processQueue();
+    final hadOperations = await SyncQueueService.processQueue();
 
-    if (_firestoreService.isAuthenticated) {
+    // Only reload from Firestore if we actually synced something
+    if (hadOperations && _firestoreService.isAuthenticated) {
       try {
         final firestoreCards = await _firestoreService.loadCards();
         final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
