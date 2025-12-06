@@ -20,7 +20,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    print('Firebase initialization failed: $e');
+    debugPrint('Firebase initialization failed: $e');
   }
 
   runApp(
@@ -115,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _syncWhenOnline() async {
-    print('✅ Back online! Starting auto-sync...');
+    debugPrint('Back online! Starting auto-sync...');
     await CardStorage.processPendingSync();
     await _updatePendingSyncCount();
   }

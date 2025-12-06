@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firestore_service.dart';
 import 'sync_queue_service.dart';
@@ -10,25 +11,23 @@ class CardStorage {
   static final ConnectivityService _connectivityService = ConnectivityService();
 
   static Future<List<Map<String, dynamic>>> loadCards() async {
-    final prefs = await SharedPreferences.getInstance();
-
     if (_firestoreService.isAuthenticated) {
-      print('🔥 User is authenticated, loading from Firestore...');
+      debugPrint('🔥 User is authenticated, loading from Firestore...');
       try {
         final firestoreCards = await _firestoreService.loadCards();
-        print('🔥 Loaded ${firestoreCards.length} cards from Firestore');
+        debugPrint('🔥 Loaded ${firestoreCards.length} cards from Firestore');
         await _saveCardsLocally(firestoreCards);
         return firestoreCards;
       } catch (e) {
-        print('❌ Firestore load failed: $e');
+        debugPrint('❌ Firestore load failed: $e');
         final localCards = await _loadCardsLocally();
-        print('📱 Loaded ${localCards.length} cards from local storage (fallback)');
+        debugPrint('📱 Loaded ${localCards.length} cards from local storage (fallback)');
         return localCards;
       }
     } else {
-      print('📱 User not authenticated, loading from local storage');
+      debugPrint('📱 User not authenticated, loading from local storage');
       final localCards = await _loadCardsLocally();
-      print('📱 Loaded ${localCards.length} cards from local storage');
+      debugPrint('📱 Loaded ${localCards.length} cards from local storage');
       return localCards;
     }
   }
@@ -90,13 +89,13 @@ class CardStorage {
       if (_connectivityService.isOnline) {
         try {
           await _firestoreService.saveCard(newCard);
-          print('✅ Card saved to Firestore');
+          debugPrint('✅ Card saved to Firestore');
         } catch (e) {
-          print('⚠️ Failed to save to Firestore, queuing for sync: $e');
+          debugPrint('⚠️ Failed to save to Firestore, queuing for sync: $e');
           await SyncQueueService.queueOperation('add', newCard);
         }
       } else {
-        print('📴 Offline: Queuing card for sync');
+        debugPrint('📴 Offline: Queuing card for sync');
         await SyncQueueService.queueOperation('add', newCard);
       }
     }
@@ -114,13 +113,13 @@ class CardStorage {
       if (_connectivityService.isOnline) {
         try {
           await _firestoreService.deleteCard(cardToRemove['id']);
-          print('✅ Card deleted from Firestore');
+          debugPrint('✅ Card deleted from Firestore');
         } catch (e) {
-          print('⚠️ Failed to delete from Firestore, queuing for sync: $e');
+          debugPrint('⚠️ Failed to delete from Firestore, queuing for sync: $e');
           await SyncQueueService.queueOperation('delete', cardToRemove);
         }
       } else {
-        print('📴 Offline: Queuing card deletion for sync');
+        debugPrint('📴 Offline: Queuing card deletion for sync');
         await SyncQueueService.queueOperation('delete', cardToRemove);
       }
     }
@@ -146,13 +145,13 @@ class CardStorage {
       if (_connectivityService.isOnline) {
         try {
           await _firestoreService.saveCard(newCard);
-          print('✅ Card updated in Firestore');
+          debugPrint('✅ Card updated in Firestore');
         } catch (e) {
-          print('⚠️ Failed to update in Firestore, queuing for sync: $e');
+          debugPrint('⚠️ Failed to update in Firestore, queuing for sync: $e');
           await SyncQueueService.queueOperation('update', newCard);
         }
       } else {
-        print('📴 Offline: Queuing card update for sync');
+        debugPrint('📴 Offline: Queuing card update for sync');
         await SyncQueueService.queueOperation('update', newCard);
       }
     }
@@ -168,6 +167,7 @@ class CardStorage {
         await _saveCardsLocally(cards);
         return;
       } catch (e) {
+        debugPrint('Failed to toggle favorite in Firestore: $e');
       }
     }
 
@@ -191,6 +191,7 @@ class CardStorage {
         await _saveCardsLocally(cards);
         return;
       } catch (e) {
+        debugPrint('Failed to update lastUsed in Firestore: $e');
       }
     }
 
@@ -218,21 +219,21 @@ class CardStorage {
       final firestoreCards = await _firestoreService.loadCards();
       await _saveCardsLocally(firestoreCards);
     } catch (e) {
-      print('Failed to sync local cards to Firestore: $e');
+      debugPrint('Failed to sync local cards to Firestore: $e');
     }
   }
 
   static Future<void> processPendingSync() async {
-    print('🔄 Processing pending sync operations...');
+    debugPrint('🔄 Processing pending sync operations...');
     await SyncQueueService.processQueue();
 
     if (_firestoreService.isAuthenticated) {
       try {
         final cards = await _firestoreService.loadCards();
         await _saveCardsLocally(cards);
-        print('✅ Cards reloaded from Firestore after sync');
+        debugPrint('✅ Cards reloaded from Firestore after sync');
       } catch (e) {
-        print('⚠️ Failed to reload cards after sync: $e');
+        debugPrint('⚠️ Failed to reload cards after sync: $e');
       }
     }
   }

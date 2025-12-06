@@ -256,7 +256,8 @@ class _SignInScreenState extends State<SignInScreen> {
                           );
 
                           // If sign up was successful, close this screen too
-                          if (result != null && result['success'] == true && mounted) {
+                          if (result != null && result['success'] == true) {
+                            if (!context.mounted) return;
                             Navigator.pop(context, result);
                           }
                         },

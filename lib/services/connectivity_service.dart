@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
   final StreamController<bool> _connectionStatusController = StreamController<bool>.broadcast();
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   Stream<bool> get connectionStream => _connectionStatusController.stream;
   bool _isOnline = true;
 
   ConnectivityService() {
     _initConnectivity();
-    _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _subscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
   bool get isOnline => _isOnline;
@@ -20,7 +22,7 @@ class ConnectivityService {
       final result = await _connectivity.checkConnectivity();
       _updateConnectionStatus(result);
     } catch (e) {
-      print('Error checking connectivity: $e');
+      debugPrint('Error checking connectivity: $e');
       _isOnline = false;
     }
   }
@@ -33,14 +35,14 @@ class ConnectivityService {
       result != ConnectivityResult.none
     );
 
-    print('🌐 Connectivity changed: ${_isOnline ? "ONLINE" : "OFFLINE"}');
+    debugPrint('Connectivity changed: ${_isOnline ? "ONLINE" : "OFFLINE"}');
 
     // Notify listeners
     _connectionStatusController.add(_isOnline);
 
     // Notify when going from offline to online
     if (!wasOnline && _isOnline) {
-      print('✅ Connection restored!');
+      debugPrint('Connection restored');
     }
   }
 
@@ -54,6 +56,7 @@ class ConnectivityService {
   }
 
   void dispose() {
+    _subscription?.cancel();
     _connectionStatusController.close();
   }
 }
