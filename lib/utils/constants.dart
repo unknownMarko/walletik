@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  // Card Categories
   static const List<String> cardCategories = [
     'Grocery',
     'Fashion',
@@ -13,7 +12,6 @@ class AppConstants {
     'Other',
   ];
   
-  // Category Icons
   static const Map<String, IconData> categoryIcons = {
     'Grocery': Icons.shopping_cart,
     'Fashion': Icons.shopping_bag,
@@ -25,7 +23,6 @@ class AppConstants {
     'Other': Icons.loyalty,
   };
   
-  // Category Colors
   static const Map<String, Color> categoryColors = {
     'Grocery': Colors.green,
     'Fashion': Colors.purple,
@@ -37,7 +34,6 @@ class AppConstants {
     'Other': Colors.grey,
   };
 
-  // Card Background Colors (Predefined Palette)
   static const List<String> cardBackgroundColors = [
     '#0066CC', // Blue
     '#E74C3C', // Red
