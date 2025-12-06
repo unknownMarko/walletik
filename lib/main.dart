@@ -79,6 +79,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool _isOffline = false;
   int _pendingSyncCount = 0;
   StreamSubscription? _connectivitySubscription;
+  bool _hasSyncedOnce = false;
   
   late AnimationController _navBarAnimationController;
   late Animation<double> _navBarAnimation;
@@ -109,6 +110,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       if (isOnline) {
         _syncWhenOnline();
       } else {
+        _hasSyncedOnce = false; // Reset so next online triggers sync
         _updatePendingSyncCount();
       }
     });
@@ -124,6 +126,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _syncWhenOnline() async {
+    // Prevent multiple syncs from duplicate connectivity events
+    if (_hasSyncedOnce) return;
+    _hasSyncedOnce = true;
+
     debugPrint('Back online! Starting auto-sync...');
     if (mounted) {
       await context.read<CardProvider>().syncPendingOperations();
