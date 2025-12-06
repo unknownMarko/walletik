@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/background_logo.dart';
-import '../widgets/loyalty_card.dart';
+import '../widgets/loyalty_card.dart' as card_widget;
+import '../models/loyalty_card.dart';
 import '../services/card_storage.dart';
 import '../utils/color_utils.dart';
 import '../utils/route_transitions.dart';
@@ -23,10 +24,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  List<Map<String, dynamic>> cards = [];
-  List<Map<String, dynamic>> recentCards = [];
-  List<Map<String, dynamic>> favoriteCards = [];
-  Map<String, dynamic>? selectedCard;
+  List<LoyaltyCard> cards = [];
+  List<LoyaltyCard> recentCards = [];
+  List<LoyaltyCard> favoriteCards = [];
+  LoyaltyCard? selectedCard;
   int? selectedCardIndex;
 
   late AnimationController _modalController;
@@ -86,7 +87,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       cards = loadedCards;
       recentCards = loadedCards.take(3).toList();
       favoriteCards = loadedCards
-          .where((card) => card['isFavorite'] == true)
+          .where((card) => card.isFavorite)
           .take(3)
           .toList();
     });
@@ -107,7 +108,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showCardDetail(Map<String, dynamic> card, int index) {
+  void _showCardDetail(LoyaltyCard card, int index) {
     setState(() {
       selectedCard = card;
       selectedCardIndex = index;
@@ -213,15 +214,17 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     );
 
                     if (result != null && result is Map<String, dynamic>) {
-                      final newCard = {
-                        'shopName': result['name'],
-                        'description': result['description'] ?? '',
-                        'cardNumber': result['code'],
-                        'color': result['color'] ?? '#0066CC',
-                        'barcodeFormat': result['barcodeFormat'] ?? 'code128',
-                        'category': result['category'] ?? 'Other',
-                        'isFavorite': result['isFavorite'] ?? false,
-                      };
+                      final newCard = LoyaltyCard(
+                        shopName: result['name'] as String,
+                        description: result['description'] as String?,
+                        cardNumber: result['code'] as String,
+                        color: (result['color'] as String?) ?? '#0066CC',
+                        barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
+                        category: (result['category'] as String?) ?? 'Other',
+                        isFavorite: (result['isFavorite'] as bool?) ?? false,
+                        createdAt: DateTime.now(),
+                        lastUsed: DateTime.now(),
+                      );
 
                       await CardStorage.addCard(newCard);
                       await _loadCards();
@@ -305,18 +308,16 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: GestureDetector(
                     onTap: () => _showCardDetail(card, index),
                     child: Hero(
-                      tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                      tag: 'card_${card.shopName}_${card.cardNumber}',
                       child: Material(
                         color: Colors.transparent,
-                        child: LoyaltyCard(
-                          shopName: card['shopName'] ?? '',
-                          description: card['description'] ?? '',
-                          cardNumber: card['cardNumber'] ?? '',
-                          cardColor: ColorUtils.hexToColor(
-                            card['color'] ?? '#0066CC',
-                          ),
-                          category: card['category'],
-                          isFavorite: card['isFavorite'],
+                        child: card_widget.LoyaltyCard(
+                          shopName: card.shopName,
+                          description: card.description ?? '',
+                          cardNumber: card.cardNumber,
+                          cardColor: ColorUtils.hexToColor(card.color),
+                          category: card.category,
+                          isFavorite: card.isFavorite,
                         ),
                       ),
                     ),
@@ -374,18 +375,16 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: GestureDetector(
                     onTap: () => _showCardDetail(card, index),
                     child: Hero(
-                      tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                      tag: 'card_${card.shopName}_${card.cardNumber}',
                       child: Material(
                         color: Colors.transparent,
-                        child: LoyaltyCard(
-                          shopName: card['shopName'] ?? '',
-                          description: card['description'] ?? '',
-                          cardNumber: card['cardNumber'] ?? '',
-                          cardColor: ColorUtils.hexToColor(
-                            card['color'] ?? '#0066CC',
-                          ),
-                          category: card['category'],
-                          isFavorite: card['isFavorite'],
+                        child: card_widget.LoyaltyCard(
+                          shopName: card.shopName,
+                          description: card.description ?? '',
+                          cardNumber: card.cardNumber,
+                          cardColor: ColorUtils.hexToColor(card.color),
+                          category: card.category,
+                          isFavorite: card.isFavorite,
                         ),
                       ),
                     ),
@@ -491,7 +490,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   position: _slideAnimation,
                                   child: Hero(
                                     tag:
-                                        'card_${selectedCard!['shopName']}_${selectedCard!['cardNumber']}',
+                                        'card_${selectedCard!.shopName}_${selectedCard!.cardNumber}',
                                     child: Material(
                                       color: Colors.transparent,
                                       child: Container(
@@ -502,7 +501,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         height: 320,
                                         decoration: BoxDecoration(
                                           color: ColorUtils.hexToColor(
-                                            selectedCard!['color'],
+                                            selectedCard!.color,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             16,
@@ -547,7 +546,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                 _contentController,
                                                               ),
                                                           child: Text(
-                                                            selectedCard!['shopName'],
+                                                            selectedCard!.shopName,
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -601,7 +600,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                 ),
                                                               ),
                                                           child: Text(
-                                                            selectedCard!['description'],
+                                                            selectedCard!.description ?? '',
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -661,17 +660,16 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                   ),
                                                               child: SvgPicture.string(
                                                                 BarcodeUtils.generate(
-                                                                  selectedCard!['cardNumber'],
-                                                                  selectedCard!['barcodeFormat'] ??
-                                                                      'code128',
+                                                                  selectedCard!.cardNumber,
+                                                                  selectedCard!.barcodeFormat,
                                                                 ),
                                                                 width:
-                                                                    selectedCard!['barcodeFormat'] ==
+                                                                    selectedCard!.barcodeFormat ==
                                                                         'qrCode'
                                                                     ? 200
                                                                     : 280,
                                                                 height:
-                                                                    selectedCard!['barcodeFormat'] ==
+                                                                    selectedCard!.barcodeFormat ==
                                                                         'qrCode'
                                                                     ? 200
                                                                     : 80,
@@ -735,15 +733,13 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                   await _loadCards();
                                                                 },
                                                                 icon: Icon(
-                                                                  selectedCard!['isFavorite'] ==
-                                                                          true
+                                                                  selectedCard!.isFavorite
                                                                       ? Icons
                                                                             .star
                                                                       : Icons
                                                                             .star_border,
                                                                   color:
-                                                                      selectedCard!['isFavorite'] ==
-                                                                          true
+                                                                      selectedCard!.isFavorite
                                                                       ? Colors
                                                                             .amber
                                                                       : Colors
@@ -760,7 +756,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                             context,
                                                                           ) => AddCardScreen(
                                                                             editCard:
-                                                                                selectedCard,
+                                                                                selectedCard!.toJson(),
                                                                           ),
                                                                     ),
                                                                   );
@@ -772,30 +768,17 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                             String,
                                                                             dynamic
                                                                           >) {
-                                                                    final updatedCard = {
-                                                                      'shopName':
-                                                                          result['name'],
-                                                                      'description':
-                                                                          result['description'] ??
-                                                                          '',
-                                                                      'cardNumber':
-                                                                          result['code'],
-                                                                      'color':
-                                                                          result['color'] ??
-                                                                          selectedCard!['color'],
-                                                                      'barcodeFormat':
-                                                                          result['barcodeFormat'] ??
-                                                                          selectedCard!['barcodeFormat'] ??
-                                                                          'code128',
-                                                                      'category':
-                                                                          result['category'] ??
-                                                                          selectedCard!['category'] ??
-                                                                          'Other',
-                                                                      'isFavorite':
-                                                                          result['isFavorite'] ??
-                                                                          selectedCard!['isFavorite'] ??
-                                                                          false,
-                                                                    };
+                                                                    final updatedCard = LoyaltyCard(
+                                                                      shopName: result['name'] as String,
+                                                                      description: result['description'] as String?,
+                                                                      cardNumber: result['code'] as String,
+                                                                      color: (result['color'] as String?) ?? selectedCard!.color,
+                                                                      barcodeFormat: (result['barcodeFormat'] as String?) ?? selectedCard!.barcodeFormat,
+                                                                      category: (result['category'] as String?) ?? selectedCard!.category,
+                                                                      isFavorite: (result['isFavorite'] as bool?) ?? selectedCard!.isFavorite,
+                                                                      createdAt: selectedCard!.createdAt,
+                                                                      lastUsed: DateTime.now(),
+                                                                    );
 
                                                                     await CardStorage.updateCard(
                                                                       selectedCard!,
@@ -841,7 +824,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                                                 'Delete Card',
                                                                               ),
                                                                               content: Text(
-                                                                                'Are you sure you want to delete ${selectedCard!['shopName']}?',
+                                                                                'Are you sure you want to delete ${selectedCard!.shopName}?',
                                                                               ),
                                                                               actions: [
                                                                                 TextButton(
