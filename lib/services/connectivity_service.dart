@@ -3,6 +3,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 class ConnectivityService {
+  // Singleton instance
+  static final ConnectivityService _instance = ConnectivityService._internal();
+  factory ConnectivityService() => _instance;
+
   final Connectivity _connectivity = Connectivity();
   final StreamController<bool> _connectionStatusController = StreamController<bool>.broadcast();
   StreamSubscription<List<ConnectivityResult>>? _subscription;
@@ -10,7 +14,7 @@ class ConnectivityService {
   Stream<bool> get connectionStream => _connectionStatusController.stream;
   bool _isOnline = true;
 
-  ConnectivityService() {
+  ConnectivityService._internal() {
     _initConnectivity();
     _subscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
