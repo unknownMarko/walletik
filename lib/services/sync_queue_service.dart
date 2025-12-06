@@ -30,10 +30,11 @@ class SyncQueueService {
     debugPrint('📝 Queued $type operation (${queue.length} pending)');
   }
 
-  static Future<void> processQueue() async {
+  /// Returns true if any operations were processed
+  static Future<bool> processQueue() async {
     if (!_firestoreService.isAuthenticated) {
       debugPrint('⚠️ Cannot process queue: user not authenticated');
-      return;
+      return false;
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -41,7 +42,7 @@ class SyncQueueService {
 
     if (queueJson == null) {
       debugPrint('✅ Sync queue is empty');
-      return;
+      return false;
     }
 
     List<Map<String, dynamic>> queue = [];
@@ -49,12 +50,12 @@ class SyncQueueService {
       queue = (json.decode(queueJson) as List).cast<Map<String, dynamic>>();
     } catch (e) {
       debugPrint('Error loading sync queue: $e');
-      return;
+      return false;
     }
 
     if (queue.isEmpty) {
       debugPrint('✅ Sync queue is empty');
-      return;
+      return false;
     }
 
     debugPrint('🔄 Processing ${queue.length} queued operations...');
@@ -93,6 +94,8 @@ class SyncQueueService {
       await prefs.setString(_queueKey, json.encode(failedOperations));
       debugPrint('⚠️ Synced $successCount operations, ${failedOperations.length} failed');
     }
+
+    return successCount > 0;
   }
 
   static Future<int> getPendingCount() async {

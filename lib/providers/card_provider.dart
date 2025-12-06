@@ -119,7 +119,8 @@ class CardProvider extends ChangeNotifier {
   Future<void> syncPendingOperations() async {
     try {
       await _repository.syncPendingOperations();
-      await loadCards();
+      // Don't call loadCards() - initial load already has data
+      // and processPendingSync handles reloading if needed
     } catch (e) {
       debugPrint('CardProvider.syncPendingOperations error: $e');
     }
