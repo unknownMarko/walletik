@@ -48,4 +48,32 @@ class AppConstants {
     '#34495E', // Dark Gray
     '#1ABC9C', // Turquoise
   ];
+
+  // Shopping list categories
+  static const List<String> shoppingCategories = [
+    'Groceries',
+    'Electronics',
+    'Clothing',
+    'Home',
+    'Health',
+    'Other',
+  ];
+
+  static const Map<String, IconData> shoppingCategoryIcons = {
+    'Groceries': Icons.shopping_basket,
+    'Electronics': Icons.devices,
+    'Clothing': Icons.checkroom,
+    'Home': Icons.home,
+    'Health': Icons.medical_services,
+    'Other': Icons.category,
+  };
+
+  static const Map<String, Color> shoppingCategoryColors = {
+    'Groceries': Colors.green,
+    'Electronics': Colors.blue,
+    'Clothing': Colors.purple,
+    'Home': Colors.orange,
+    'Health': Colors.red,
+    'Other': Colors.grey,
+  };
 }

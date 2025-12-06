@@ -3,6 +3,7 @@ import 'dart:ui';
 import '../widgets/background_logo.dart';
 import '../services/shopping_list_storage.dart';
 import '../models/shopping_item.dart';
+import '../utils/constants.dart';
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
@@ -13,15 +14,6 @@ class ShoppingListScreen extends StatefulWidget {
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
   List<ShoppingItem> allItems = [];
-  
-  final List<String> categories = [
-    'Groceries',
-    'Electronics',
-    'Clothing',
-    'Home',
-    'Health',
-    'Other'
-  ];
 
   @override
   void initState() {
@@ -122,7 +114,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Category',
                       ),
-                      items: categories.map((category) {
+                      items: AppConstants.shoppingCategories.map((category) {
                         return DropdownMenuItem(
                           value: category,
                           child: Text(category),
@@ -191,35 +183,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   Widget _buildCategoryIcon(String category) {
-    IconData icon;
-    Color color;
-    
-    switch (category) {
-      case 'Groceries':
-        icon = Icons.shopping_basket;
-        color = Colors.green;
-        break;
-      case 'Electronics':
-        icon = Icons.devices;
-        color = Colors.blue;
-        break;
-      case 'Clothing':
-        icon = Icons.checkroom;
-        color = Colors.purple;
-        break;
-      case 'Home':
-        icon = Icons.home;
-        color = Colors.orange;
-        break;
-      case 'Health':
-        icon = Icons.medical_services;
-        color = Colors.red;
-        break;
-      default:
-        icon = Icons.category;
-        color = Colors.grey;
-    }
-    
+    final icon = AppConstants.shoppingCategoryIcons[category] ?? Icons.category;
+    final color = AppConstants.shoppingCategoryColors[category] ?? Colors.grey;
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
