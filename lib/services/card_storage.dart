@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/loyalty_card.dart';
 import 'firestore_service.dart';
 import 'sync_queue_service.dart';
 import 'connectivity_service.dart';
@@ -10,29 +11,30 @@ class CardStorage {
   static final FirestoreService _firestoreService = FirestoreService();
   static final ConnectivityService _connectivityService = ConnectivityService();
 
-  static Future<List<Map<String, dynamic>>> loadCards() async {
+  static Future<List<LoyaltyCard>> loadCards() async {
     if (_firestoreService.isAuthenticated) {
-      debugPrint('🔥 User is authenticated, loading from Firestore...');
+      debugPrint('User is authenticated, loading from Firestore...');
       try {
         final firestoreCards = await _firestoreService.loadCards();
-        debugPrint('🔥 Loaded ${firestoreCards.length} cards from Firestore');
-        await _saveCardsLocally(firestoreCards);
-        return firestoreCards;
+        final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
+        debugPrint('Loaded ${cards.length} cards from Firestore');
+        await _saveCardsLocally(cards);
+        return cards;
       } catch (e) {
-        debugPrint('❌ Firestore load failed: $e');
+        debugPrint('Firestore load failed: $e');
         final localCards = await _loadCardsLocally();
-        debugPrint('📱 Loaded ${localCards.length} cards from local storage (fallback)');
+        debugPrint('Loaded ${localCards.length} cards from local storage (fallback)');
         return localCards;
       }
     } else {
-      debugPrint('📱 User not authenticated, loading from local storage');
+      debugPrint('User not authenticated, loading from local storage');
       final localCards = await _loadCardsLocally();
-      debugPrint('📱 Loaded ${localCards.length} cards from local storage');
+      debugPrint('Loaded ${localCards.length} cards from local storage');
       return localCards;
     }
   }
 
-  static Future<List<Map<String, dynamic>>> _loadCardsLocally() async {
+  static Future<List<LoyaltyCard>> _loadCardsLocally() async {
     final prefs = await SharedPreferences.getInstance();
     final cardsJson = prefs.getString(_cardsKey);
 
@@ -42,128 +44,110 @@ class CardStorage {
 
     try {
       final cardsList = json.decode(cardsJson) as List<dynamic>;
-      return cardsList.cast<Map<String, dynamic>>();
+      return cardsList
+          .map((c) => LoyaltyCard.fromJson(c as Map<String, dynamic>))
+          .toList();
     } catch (_) {
       return [];
     }
   }
 
-  static Future<void> _saveCardsLocally(List<Map<String, dynamic>> cards) async {
+  static Future<void> _saveCardsLocally(List<LoyaltyCard> cards) async {
     final prefs = await SharedPreferences.getInstance();
-
-    final cardsToSave = cards.map((card) {
-      final cardCopy = Map<String, dynamic>.from(card);
-
-      cardCopy.forEach((key, value) {
-        if (value != null && value.toString().contains('Timestamp')) {
-          try {
-            cardCopy[key] = (value as dynamic).toDate().toIso8601String();
-          } catch (e) {
-            cardCopy.remove(key);
-          }
-        }
-      });
-
-      return cardCopy;
-    }).toList();
-
-    final cardsJson = json.encode(cardsToSave);
+    final cardsJson = json.encode(cards.map((c) => c.toJson()).toList());
     await prefs.setString(_cardsKey, cardsJson);
   }
 
-  static Future<void> saveCards(List<Map<String, dynamic>> cards) async {
+  static Future<void> saveCards(List<LoyaltyCard> cards) async {
     await _saveCardsLocally(cards);
   }
 
-  static Future<void> addCard(Map<String, dynamic> newCard) async {
-    newCard['category'] ??= 'Other';
-    newCard['isFavorite'] ??= false;
-    newCard['lastUsed'] ??= DateTime.now().toIso8601String();
-    newCard['createdAt'] ??= DateTime.now().toIso8601String();
-
+  static Future<void> addCard(LoyaltyCard card) async {
     final cards = await _loadCardsLocally();
-    cards.add(newCard);
+    cards.add(card);
     await _saveCardsLocally(cards);
 
     if (_firestoreService.isAuthenticated) {
       if (_connectivityService.isOnline) {
         try {
-          await _firestoreService.saveCard(newCard);
-          debugPrint('✅ Card saved to Firestore');
+          await _firestoreService.saveCard(card.toJson());
+          debugPrint('Card saved to Firestore');
         } catch (e) {
-          debugPrint('⚠️ Failed to save to Firestore, queuing for sync: $e');
-          await SyncQueueService.queueOperation('add', newCard);
+          debugPrint('Failed to save to Firestore, queuing for sync: $e');
+          await SyncQueueService.queueOperation('add', card.toJson());
         }
       } else {
-        debugPrint('📴 Offline: Queuing card for sync');
-        await SyncQueueService.queueOperation('add', newCard);
+        debugPrint('Offline: Queuing card for sync');
+        await SyncQueueService.queueOperation('add', card.toJson());
       }
     }
   }
 
-  static Future<void> removeCard(Map<String, dynamic> cardToRemove) async {
+  static Future<void> removeCard(LoyaltyCard cardToRemove) async {
     final cards = await _loadCardsLocally();
     cards.removeWhere((card) =>
-      card['shopName'] == cardToRemove['shopName'] &&
-      card['cardNumber'] == cardToRemove['cardNumber']
+      card.shopName == cardToRemove.shopName &&
+      card.cardNumber == cardToRemove.cardNumber
     );
     await _saveCardsLocally(cards);
 
-    if (_firestoreService.isAuthenticated && cardToRemove['id'] != null) {
+    if (_firestoreService.isAuthenticated && cardToRemove.id != null) {
       if (_connectivityService.isOnline) {
         try {
-          await _firestoreService.deleteCard(cardToRemove['id']);
-          debugPrint('✅ Card deleted from Firestore');
+          await _firestoreService.deleteCard(cardToRemove.id!);
+          debugPrint('Card deleted from Firestore');
         } catch (e) {
-          debugPrint('⚠️ Failed to delete from Firestore, queuing for sync: $e');
-          await SyncQueueService.queueOperation('delete', cardToRemove);
+          debugPrint('Failed to delete from Firestore, queuing for sync: $e');
+          await SyncQueueService.queueOperation('delete', cardToRemove.toJson());
         }
       } else {
-        debugPrint('📴 Offline: Queuing card deletion for sync');
-        await SyncQueueService.queueOperation('delete', cardToRemove);
+        debugPrint('Offline: Queuing card deletion for sync');
+        await SyncQueueService.queueOperation('delete', cardToRemove.toJson());
       }
     }
   }
 
-  static Future<void> updateCard(Map<String, dynamic> oldCard, Map<String, dynamic> newCard) async {
-    newCard['createdAt'] ??= oldCard['createdAt'] ?? DateTime.now().toIso8601String();
-    newCard['lastUsed'] ??= oldCard['lastUsed'] ?? DateTime.now().toIso8601String();
-    newCard['id'] = oldCard['id'];
+  static Future<void> updateCard(LoyaltyCard oldCard, LoyaltyCard newCard) async {
+    final cardToSave = newCard.copyWith(
+      id: oldCard.id,
+      createdAt: oldCard.createdAt,
+    );
 
     final cards = await _loadCardsLocally();
     final index = cards.indexWhere((card) =>
-      card['shopName'] == oldCard['shopName'] &&
-      card['cardNumber'] == oldCard['cardNumber']
+      card.shopName == oldCard.shopName &&
+      card.cardNumber == oldCard.cardNumber
     );
 
     if (index != -1) {
-      cards[index] = newCard;
+      cards[index] = cardToSave;
       await _saveCardsLocally(cards);
     }
 
-    if (_firestoreService.isAuthenticated && oldCard['id'] != null) {
+    if (_firestoreService.isAuthenticated && oldCard.id != null) {
       if (_connectivityService.isOnline) {
         try {
-          await _firestoreService.saveCard(newCard);
-          debugPrint('✅ Card updated in Firestore');
+          await _firestoreService.saveCard(cardToSave.toJson());
+          debugPrint('Card updated in Firestore');
         } catch (e) {
-          debugPrint('⚠️ Failed to update in Firestore, queuing for sync: $e');
-          await SyncQueueService.queueOperation('update', newCard);
+          debugPrint('Failed to update in Firestore, queuing for sync: $e');
+          await SyncQueueService.queueOperation('update', cardToSave.toJson());
         }
       } else {
-        debugPrint('📴 Offline: Queuing card update for sync');
-        await SyncQueueService.queueOperation('update', newCard);
+        debugPrint('Offline: Queuing card update for sync');
+        await SyncQueueService.queueOperation('update', cardToSave.toJson());
       }
     }
   }
 
-  static Future<void> toggleFavorite(Map<String, dynamic> card) async {
-    final newFavoriteStatus = !(card['isFavorite'] ?? false);
+  static Future<void> toggleFavorite(LoyaltyCard card) async {
+    final newFavoriteStatus = !card.isFavorite;
 
-    if (_firestoreService.isAuthenticated && card['id'] != null) {
+    if (_firestoreService.isAuthenticated && card.id != null) {
       try {
-        await _firestoreService.toggleFavorite(card['id'], newFavoriteStatus);
-        final cards = await _firestoreService.loadCards();
+        await _firestoreService.toggleFavorite(card.id!, newFavoriteStatus);
+        final firestoreCards = await _firestoreService.loadCards();
+        final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
         await _saveCardsLocally(cards);
         return;
       } catch (e) {
@@ -173,21 +157,22 @@ class CardStorage {
 
     final cards = await _loadCardsLocally();
     final index = cards.indexWhere((c) =>
-      c['shopName'] == card['shopName'] &&
-      c['cardNumber'] == card['cardNumber']
+      c.shopName == card.shopName &&
+      c.cardNumber == card.cardNumber
     );
 
     if (index != -1) {
-      cards[index]['isFavorite'] = newFavoriteStatus;
+      cards[index] = cards[index].copyWith(isFavorite: newFavoriteStatus);
       await _saveCardsLocally(cards);
     }
   }
 
-  static Future<void> updateLastUsed(Map<String, dynamic> card) async {
-    if (_firestoreService.isAuthenticated && card['id'] != null) {
+  static Future<void> updateLastUsed(LoyaltyCard card) async {
+    if (_firestoreService.isAuthenticated && card.id != null) {
       try {
-        await _firestoreService.updateLastUsed(card['id']);
-        final cards = await _firestoreService.loadCards();
+        await _firestoreService.updateLastUsed(card.id!);
+        final firestoreCards = await _firestoreService.loadCards();
+        final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
         await _saveCardsLocally(cards);
         return;
       } catch (e) {
@@ -197,12 +182,12 @@ class CardStorage {
 
     final cards = await _loadCardsLocally();
     final index = cards.indexWhere((c) =>
-      c['shopName'] == card['shopName'] &&
-      c['cardNumber'] == card['cardNumber']
+      c.shopName == card.shopName &&
+      c.cardNumber == card.cardNumber
     );
 
     if (index != -1) {
-      cards[index]['lastUsed'] = DateTime.now().toIso8601String();
+      cards[index] = cards[index].copyWith(lastUsed: DateTime.now());
       await _saveCardsLocally(cards);
     }
   }
@@ -214,28 +199,31 @@ class CardStorage {
       final localCards = await _loadCardsLocally();
       if (localCards.isEmpty) return;
 
-      await _firestoreService.syncLocalCardsToFirestore(localCards);
+      await _firestoreService.syncLocalCardsToFirestore(
+        localCards.map((c) => c.toJson()).toList()
+      );
 
       final firestoreCards = await _firestoreService.loadCards();
-      await _saveCardsLocally(firestoreCards);
+      final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
+      await _saveCardsLocally(cards);
     } catch (e) {
       debugPrint('Failed to sync local cards to Firestore: $e');
     }
   }
 
   static Future<void> processPendingSync() async {
-    debugPrint('🔄 Processing pending sync operations...');
+    debugPrint('Processing pending sync operations...');
     await SyncQueueService.processQueue();
 
     if (_firestoreService.isAuthenticated) {
       try {
-        final cards = await _firestoreService.loadCards();
+        final firestoreCards = await _firestoreService.loadCards();
+        final cards = firestoreCards.map((c) => LoyaltyCard.fromJson(c)).toList();
         await _saveCardsLocally(cards);
-        debugPrint('✅ Cards reloaded from Firestore after sync');
+        debugPrint('Cards reloaded from Firestore after sync');
       } catch (e) {
-        debugPrint('⚠️ Failed to reload cards after sync: $e');
+        debugPrint('Failed to reload cards after sync: $e');
       }
     }
   }
-
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../widgets/background_logo.dart';
 import '../services/shopping_list_storage.dart';
+import '../models/shopping_item.dart';
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
@@ -11,7 +12,7 @@ class ShoppingListScreen extends StatefulWidget {
 }
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
-  List<Map<String, dynamic>> allItems = [];
+  List<ShoppingItem> allItems = [];
   
   final List<String> categories = [
     'Groceries',
@@ -53,19 +54,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
 
-  Future<void> _toggleItemCompletion(Map<String, dynamic> item) async {
+  Future<void> _toggleItemCompletion(ShoppingItem item) async {
     await ShoppingListStorage.toggleItemCompletion(item);
     await _loadItems();
   }
 
-  Future<void> _deleteItem(Map<String, dynamic> item) async {
+  Future<void> _deleteItem(ShoppingItem item) async {
     await ShoppingListStorage.removeItem(item);
     await _loadItems();
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${item['name']} removed'),
+          content: Text('${item.name} removed'),
           action: SnackBarAction(
             label: 'Undo',
             onPressed: () async {
@@ -78,16 +79,16 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     }
   }
 
-  Future<void> _showAddEditDialog([Map<String, dynamic>? existingItem]) async {
+  Future<void> _showAddEditDialog([ShoppingItem? existingItem]) async {
     final isEditing = existingItem != null;
-    final nameController = TextEditingController(text: existingItem?['name'] ?? '');
+    final nameController = TextEditingController(text: existingItem?.name ?? '');
     final quantityController = TextEditingController(
-      text: existingItem?['quantity']?.toString() ?? '1'
+      text: existingItem?.quantity.toString() ?? '1'
     );
-    final notesController = TextEditingController(text: existingItem?['notes'] ?? '');
-    String selectedCategory = existingItem?['category'] ?? 'Groceries';
+    final notesController = TextEditingController(text: existingItem?.notes ?? '');
+    String selectedCategory = existingItem?.category ?? 'Groceries';
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<ShoppingItem>(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
@@ -158,14 +159,17 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                       );
                       return;
                     }
-                    
-                    Navigator.pop(context, {
-                      'name': nameController.text.trim(),
-                      'quantity': int.tryParse(quantityController.text) ?? 1,
-                      'category': selectedCategory,
-                      'notes': notesController.text.trim(),
-                      'isCompleted': existingItem?['isCompleted'] ?? false,
-                    });
+
+                    final newItem = ShoppingItem(
+                      id: existingItem?.id ?? '',
+                      name: nameController.text.trim(),
+                      quantity: int.tryParse(quantityController.text) ?? 1,
+                      category: selectedCategory,
+                      notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+                      isCompleted: existingItem?.isCompleted ?? false,
+                      createdAt: existingItem?.createdAt ?? DateTime.now(),
+                    );
+                    Navigator.pop(context, newItem);
                   },
                   child: Text(isEditing ? 'Save' : 'Add'),
                 ),
@@ -229,8 +233,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final completedItems = allItems.where((item) => item['isCompleted'] == true).toList();
-    final pendingItems = allItems.where((item) => item['isCompleted'] != true).toList();
+    final completedItems = allItems.where((item) => item.isCompleted).toList();
+    final pendingItems = allItems.where((item) => !item.isCompleted).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -338,10 +342,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         },
                         itemBuilder: (context, index) {
                           final item = allItems[index];
-                          final isCompleted = item['isCompleted'] == true;
-                          
+                          final isCompleted = item.isCompleted;
+
                           return Dismissible(
-                            key: Key(item['id'] ?? index.toString()),
+                            key: Key(item.id),
                             direction: DismissDirection.endToStart,
                             background: Container(
                               alignment: Alignment.centerRight,
@@ -363,19 +367,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               color: isCompleted
-                                  ? (isDarkTheme 
+                                  ? (isDarkTheme
                                       ? Colors.white.withValues(alpha: 0.05)
                                       : Colors.black.withValues(alpha: 0.05))
                                   : (isDarkTheme
                                       ? Theme.of(context).colorScheme.surfaceContainerHighest
                                       : Colors.white),
                               child: ListTile(
-                                leading: _buildCategoryIcon(item['category'] ?? 'Other'),
+                                leading: _buildCategoryIcon(item.category),
                                 title: Text(
-                                  item['name'] ?? '',
+                                  item.name,
                                   style: TextStyle(
-                                    decoration: isCompleted 
-                                        ? TextDecoration.lineThrough 
+                                    decoration: isCompleted
+                                        ? TextDecoration.lineThrough
                                         : null,
                                     color: isCompleted
                                         ? (isDarkTheme ? Colors.white54 : Colors.black38)
@@ -385,18 +389,18 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (item['quantity'] != null && item['quantity'] != 1)
+                                    if (item.quantity != 1)
                                       Text(
-                                        'Quantity: ${item['quantity']}',
+                                        'Quantity: ${item.quantity}',
                                         style: TextStyle(
                                           color: isCompleted
                                               ? (isDarkTheme ? Colors.white38 : Colors.black26)
                                               : null,
                                         ),
                                       ),
-                                    if (item['notes'] != null && item['notes'].toString().isNotEmpty)
+                                    if (item.notes != null && item.notes!.isNotEmpty)
                                       Text(
-                                        item['notes'],
+                                        item.notes!,
                                         style: TextStyle(
                                           fontStyle: FontStyle.italic,
                                           color: isCompleted

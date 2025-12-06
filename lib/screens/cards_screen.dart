@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'add_card_screen.dart';
-import '../widgets/loyalty_card.dart';
+import '../widgets/loyalty_card.dart' as card_widget;
+import '../models/loyalty_card.dart';
 import '../widgets/background_logo.dart';
 import '../services/card_storage.dart';
 import '../utils/color_utils.dart';
@@ -21,12 +22,12 @@ class CardsScreen extends StatefulWidget {
 class _CardsScreenState extends State<CardsScreen>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> allCards = [];
-  List<Map<String, dynamic>> filteredCards = [];
-  List<Map<String, dynamic>> displayCards = [];
-  Map<String, dynamic>? selectedCard;
+  List<LoyaltyCard> allCards = [];
+  List<LoyaltyCard> filteredCards = [];
+  List<LoyaltyCard> displayCards = [];
+  LoyaltyCard? selectedCard;
   int? selectedCardIndex;
-  Map<String, dynamic>? draggingCard;
+  LoyaltyCard? draggingCard;
   int? hoverIndex;
   Timer? _previewTimer;
 
@@ -97,17 +98,17 @@ class _CardsScreenState extends State<CardsScreen>
     setState(() {
       final card = filteredCards.removeAt(fromIndex);
       filteredCards.insert(toIndex, card);
-      
-      final cardIndex = allCards.indexWhere((c) => 
-        c['shopName'] == card['shopName'] && c['cardNumber'] == card['cardNumber']);
+
+      final cardIndex = allCards.indexWhere((c) =>
+        c.shopName == card.shopName && c.cardNumber == card.cardNumber);
       if (cardIndex != -1) {
         allCards.removeAt(cardIndex);
         allCards.insert(toIndex.clamp(0, allCards.length), card);
       }
-      
+
       displayCards = List.from(filteredCards);
     });
-    
+
     await CardStorage.saveCards(allCards);
   }
 
@@ -118,9 +119,9 @@ class _CardsScreenState extends State<CardsScreen>
         filteredCards = allCards;
       } else {
         filteredCards = allCards.where((card) {
-          final shopName = (card['shopName'] ?? '').toLowerCase();
-          final description = (card['description'] ?? '').toLowerCase();
-          final cardNumber = (card['cardNumber'] ?? '').toLowerCase();
+          final shopName = card.shopName.toLowerCase();
+          final description = (card.description ?? '').toLowerCase();
+          final cardNumber = card.cardNumber.toLowerCase();
           return shopName.contains(query) ||
               description.contains(query) ||
               cardNumber.contains(query);
@@ -130,11 +131,11 @@ class _CardsScreenState extends State<CardsScreen>
     });
   }
 
-  void _updatePreviewOrder(Map<String, dynamic> draggedCard, int targetIndex) {
+  void _updatePreviewOrder(LoyaltyCard draggedCard, int targetIndex) {
     setState(() {
-      final draggedIndex = filteredCards.indexWhere((c) => 
-        c['shopName'] == draggedCard['shopName'] && c['cardNumber'] == draggedCard['cardNumber']);
-      
+      final draggedIndex = filteredCards.indexWhere((c) =>
+        c.shopName == draggedCard.shopName && c.cardNumber == draggedCard.cardNumber);
+
       if (draggedIndex != -1) {
         displayCards = List.from(filteredCards);
         final card = displayCards.removeAt(draggedIndex);
@@ -155,7 +156,7 @@ class _CardsScreenState extends State<CardsScreen>
     });
   }
 
-  void _startPreviewTimer(Map<String, dynamic> draggedCard, int targetIndex) {
+  void _startPreviewTimer(LoyaltyCard draggedCard, int targetIndex) {
     _previewTimer?.cancel();
     _previewTimer = Timer(const Duration(milliseconds: 150), () {
       _updatePreviewOrder(draggedCard, targetIndex);
@@ -177,7 +178,7 @@ class _CardsScreenState extends State<CardsScreen>
     }
   }
 
-  void _showCardDetail(Map<String, dynamic> card, int index) {
+  void _showCardDetail(LoyaltyCard card, int index) {
     setState(() {
       selectedCard = card;
       selectedCardIndex = index;
@@ -244,16 +245,17 @@ class _CardsScreenState extends State<CardsScreen>
 
                               if (result != null &&
                                   result is Map<String, dynamic>) {
-                                final newCard = {
-                                  'shopName': result['name'],
-                                  'description': result['description'] ?? '',
-                                  'cardNumber': result['code'],
-                                  'color': result['color'] ?? '#0066CC',
-                                  'barcodeFormat':
-                                      result['barcodeFormat'] ?? 'code128',
-                                  'category': result['category'] ?? 'Other',
-                                  'isFavorite': result['isFavorite'] ?? false,
-                                };
+                                final newCard = LoyaltyCard(
+                                  shopName: result['name'] as String,
+                                  description: result['description'] as String?,
+                                  cardNumber: result['code'] as String,
+                                  color: (result['color'] as String?) ?? '#0066CC',
+                                  barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
+                                  category: (result['category'] as String?) ?? 'Other',
+                                  isFavorite: (result['isFavorite'] as bool?) ?? false,
+                                  createdAt: DateTime.now(),
+                                  lastUsed: DateTime.now(),
+                                );
 
                                 await CardStorage.addCard(newCard);
                                 await _loadCards();
@@ -306,8 +308,8 @@ class _CardsScreenState extends State<CardsScreen>
                                 child: child,
                               );
                             },
-                            child: DragTarget<Map<String, dynamic>>(
-                              key: ValueKey('${card['shopName']}_${card['cardNumber']}_$index'),
+                            child: DragTarget<LoyaltyCard>(
+                              key: ValueKey('${card.shopName}_${card.cardNumber}_$index'),
                             onWillAcceptWithDetails: (details) => details.data != card,
                             onMove: (details) {
                               _startPreviewTimer(details.data, index);
@@ -317,9 +319,9 @@ class _CardsScreenState extends State<CardsScreen>
                             },
                             onAcceptWithDetails: (details) {
                               final draggedCard = details.data;
-                              final fromIndex = filteredCards.indexWhere((c) => 
-                                c['shopName'] == draggedCard['shopName'] && 
-                                c['cardNumber'] == draggedCard['cardNumber']);
+                              final fromIndex = filteredCards.indexWhere((c) =>
+                                c.shopName == draggedCard.shopName &&
+                                c.cardNumber == draggedCard.cardNumber);
                               if (fromIndex != -1) {
                                 _onCardReorder(fromIndex, index);
                               }
@@ -335,7 +337,7 @@ class _CardsScreenState extends State<CardsScreen>
                                   duration: const Duration(milliseconds: 200),
                                   curve: Curves.easeInOut,
                                   transform: isHovering ? Matrix4.translationValues(0, -5, 0) : Matrix4.identity(),
-                                  child: LongPressDraggable<Map<String, dynamic>>(
+                                  child: LongPressDraggable<LoyaltyCard>(
                                 data: card,
                                 feedback: Material(
                                   elevation: 8,
@@ -344,7 +346,7 @@ class _CardsScreenState extends State<CardsScreen>
                                     width: 150,
                                     height: 125,
                                     decoration: BoxDecoration(
-                                      color: ColorUtils.hexToColor(card['color']),
+                                      color: ColorUtils.hexToColor(card.color),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Opacity(
@@ -356,7 +358,7 @@ class _CardsScreenState extends State<CardsScreen>
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              card['shopName'],
+                                              card.shopName,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 14,
@@ -367,7 +369,7 @@ class _CardsScreenState extends State<CardsScreen>
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              card['cardNumber'],
+                                              card.cardNumber,
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -401,18 +403,16 @@ class _CardsScreenState extends State<CardsScreen>
                                 child: GestureDetector(
                                   onTap: () => _showCardDetail(card, index),
                                   child: Hero(
-                                    tag: 'card_${card['shopName']}_${card['cardNumber']}',
+                                    tag: 'card_${card.shopName}_${card.cardNumber}',
                                     child: Material(
                                       color: Colors.transparent,
-                                      child: LoyaltyCard(
-                                        shopName: card['shopName'],
-                                        description: card['description'],
-                                        cardNumber: card['cardNumber'],
-                                        cardColor: ColorUtils.hexToColor(
-                                          card['color'],
-                                        ),
-                                        category: card['category'],
-                                        isFavorite: card['isFavorite'],
+                                      child: card_widget.LoyaltyCard(
+                                        shopName: card.shopName,
+                                        description: card.description ?? '',
+                                        cardNumber: card.cardNumber,
+                                        cardColor: ColorUtils.hexToColor(card.color),
+                                        category: card.category,
+                                        isFavorite: card.isFavorite,
                                       ),
                                     ),
                                   ),
@@ -449,7 +449,7 @@ class _CardsScreenState extends State<CardsScreen>
                                   position: _slideAnimation,
                                   child: Hero(
                                     tag:
-                                        'card_${selectedCard!['shopName']}_${selectedCard!['cardNumber']}',
+                                        'card_${selectedCard!.shopName}_${selectedCard!.cardNumber}',
                                     child: Material(
                                       color: Colors.transparent,
                                       child: Container(
@@ -460,7 +460,7 @@ class _CardsScreenState extends State<CardsScreen>
                                         height: 320,
                                         decoration: BoxDecoration(
                                           color: ColorUtils.hexToColor(
-                                            selectedCard!['color'],
+                                            selectedCard!.color,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             16,
@@ -505,7 +505,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                 _contentController,
                                                               ),
                                                           child: Text(
-                                                            selectedCard!['shopName'],
+                                                            selectedCard!.shopName,
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -559,7 +559,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                 ),
                                                               ),
                                                           child: Text(
-                                                            selectedCard!['description'],
+                                                            selectedCard!.description ?? '',
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -619,17 +619,16 @@ class _CardsScreenState extends State<CardsScreen>
                                                                   ),
                                                               child: SvgPicture.string(
                                                                 BarcodeUtils.generate(
-                                                                  selectedCard!['cardNumber'],
-                                                                  selectedCard!['barcodeFormat'] ??
-                                                                      'code128',
+                                                                  selectedCard!.cardNumber,
+                                                                  selectedCard!.barcodeFormat,
                                                                 ),
                                                                 width:
-                                                                    selectedCard!['barcodeFormat'] ==
+                                                                    selectedCard!.barcodeFormat ==
                                                                         'qrCode'
                                                                     ? 200
                                                                     : 280,
                                                                 height:
-                                                                    selectedCard!['barcodeFormat'] ==
+                                                                    selectedCard!.barcodeFormat ==
                                                                         'qrCode'
                                                                     ? 200
                                                                     : 80,
@@ -693,15 +692,13 @@ class _CardsScreenState extends State<CardsScreen>
                                                                   await _loadCards();
                                                                 },
                                                                 icon: Icon(
-                                                                  selectedCard!['isFavorite'] ==
-                                                                          true
+                                                                  selectedCard!.isFavorite
                                                                       ? Icons
                                                                             .star
                                                                       : Icons
                                                                             .star_border,
                                                                   color:
-                                                                      selectedCard!['isFavorite'] ==
-                                                                          true
+                                                                      selectedCard!.isFavorite
                                                                       ? Colors
                                                                             .amber
                                                                       : Colors
@@ -718,7 +715,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                             context,
                                                                           ) => AddCardScreen(
                                                                             editCard:
-                                                                                selectedCard,
+                                                                                selectedCard!.toJson(),
                                                                           ),
                                                                     ),
                                                                   );
@@ -730,30 +727,17 @@ class _CardsScreenState extends State<CardsScreen>
                                                                             String,
                                                                             dynamic
                                                                           >) {
-                                                                    final updatedCard = {
-                                                                      'shopName':
-                                                                          result['name'],
-                                                                      'description':
-                                                                          result['description'] ??
-                                                                          '',
-                                                                      'cardNumber':
-                                                                          result['code'],
-                                                                      'color':
-                                                                          result['color'] ??
-                                                                          selectedCard!['color'],
-                                                                      'barcodeFormat':
-                                                                          result['barcodeFormat'] ??
-                                                                          selectedCard!['barcodeFormat'] ??
-                                                                          'code128',
-                                                                      'category':
-                                                                          result['category'] ??
-                                                                          selectedCard!['category'] ??
-                                                                          'Other',
-                                                                      'isFavorite':
-                                                                          result['isFavorite'] ??
-                                                                          selectedCard!['isFavorite'] ??
-                                                                          false,
-                                                                    };
+                                                                    final updatedCard = LoyaltyCard(
+                                                                      shopName: result['name'] as String,
+                                                                      description: result['description'] as String?,
+                                                                      cardNumber: result['code'] as String,
+                                                                      color: (result['color'] as String?) ?? selectedCard!.color,
+                                                                      barcodeFormat: (result['barcodeFormat'] as String?) ?? selectedCard!.barcodeFormat,
+                                                                      category: (result['category'] as String?) ?? selectedCard!.category,
+                                                                      isFavorite: (result['isFavorite'] as bool?) ?? selectedCard!.isFavorite,
+                                                                      createdAt: selectedCard!.createdAt,
+                                                                      lastUsed: DateTime.now(),
+                                                                    );
 
                                                                     await CardStorage.updateCard(
                                                                       selectedCard!,
@@ -799,7 +783,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                                 'Delete Card',
                                                                               ),
                                                                               content: Text(
-                                                                                'Are you sure you want to delete ${selectedCard!['shopName']}?',
+                                                                                'Are you sure you want to delete ${selectedCard!.shopName}?',
                                                                               ),
                                                                               actions: [
                                                                                 TextButton(
