@@ -9,9 +9,8 @@ class BackgroundLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Background logo
         Positioned(
-          bottom: -15, // Move logo down to start from bottom navbar level
+          bottom: -15,
           left: 0,
           right: 0,
           child: Opacity(
@@ -29,7 +28,6 @@ class BackgroundLogo extends StatelessWidget {
             ),
           ),
         ),
-        // Content
         child,
       ],
     );

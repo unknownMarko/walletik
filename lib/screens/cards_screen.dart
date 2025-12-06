@@ -70,7 +70,7 @@ class _CardsScreenState extends State<CardsScreen>
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> allCards = [];
   List<Map<String, dynamic>> filteredCards = [];
-  List<Map<String, dynamic>> displayCards = []; // For preview during drag
+  List<Map<String, dynamic>> displayCards = [];
   Map<String, dynamic>? selectedCard;
   int? selectedCardIndex;
   Map<String, dynamic>? draggingCard;
@@ -145,7 +145,6 @@ class _CardsScreenState extends State<CardsScreen>
       final card = filteredCards.removeAt(fromIndex);
       filteredCards.insert(toIndex, card);
       
-      // Also update allCards to maintain consistency
       final cardIndex = allCards.indexWhere((c) => 
         c['shopName'] == card['shopName'] && c['cardNumber'] == card['cardNumber']);
       if (cardIndex != -1) {
@@ -153,11 +152,9 @@ class _CardsScreenState extends State<CardsScreen>
         allCards.insert(toIndex.clamp(0, allCards.length), card);
       }
       
-      // Update display cards to match the new order
       displayCards = List.from(filteredCards);
     });
     
-    // Save the new order to storage
     await CardStorage.saveCards(allCards);
   }
 
@@ -320,7 +317,6 @@ class _CardsScreenState extends State<CardsScreen>
                       itemCount: displayCards.length + 1,
                       itemBuilder: (context, index) {
                         if (index == displayCards.length) {
-                          // Add Card button
                           return GestureDetector(
                             onTap: () async {
                               final result = await Navigator.push(
@@ -385,7 +381,6 @@ class _CardsScreenState extends State<CardsScreen>
                             ),
                           );
                         } else {
-                          // Existing card
                           final card = displayCards[index];
                           return AnimatedSwitcher(
                             duration: const Duration(milliseconds: 250),

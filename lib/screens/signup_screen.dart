@@ -2,75 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/background_logo.dart';
-import 'signup_screen.dart';
 
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signInWithEmail() async {
+  Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final success = await authProvider.signInWithEmail(
+    final success = await authProvider.signUpWithEmail(
       _emailController.text.trim(),
       _passwordController.text,
     );
 
     if (success && mounted) {
+      // Navigate back to sign in or home screen
       Navigator.pop(context, {'success': true, 'method': 'email'});
     } else if (mounted) {
+      // Show error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Failed to sign in'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _forgotPassword() async {
-    if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email address'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.sendPasswordResetEmail(_emailController.text.trim());
-
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset email sent! Check your inbox.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Failed to send reset email'),
+          content: Text(authProvider.errorMessage ?? 'Failed to sign up'),
           backgroundColor: Colors.red,
         ),
       );
@@ -99,16 +72,17 @@ class _SignInScreenState extends State<SignInScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  
+
+                  // Header
                   Icon(
-                    Icons.account_circle,
+                    Icons.person_add,
                     size: 80,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   Text(
-                    'Welcome Back',
+                    'Create Account',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -117,9 +91,9 @@ class _SignInScreenState extends State<SignInScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  
+
                   Text(
-                    'Sign in to continue',
+                    'Sign up to get started',
                     style: TextStyle(
                       fontSize: 16,
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -128,6 +102,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 48),
 
+                  // Email Field
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -153,6 +128,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Password Field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -188,26 +164,49 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _forgotPassword,
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
+                  // Confirm Password Field
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      hintText: 'Confirm your password',
+                      prefixIcon: const Icon(Icons.lock_outlined),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
                         ),
                       ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm your password';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
 
+                  // Sign Up Button
                   Consumer<AuthProvider>(
                     builder: (context, authProvider, child) {
                       return SizedBox(
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: authProvider.isLoading ? null : _signInWithEmail,
+                          onPressed: authProvider.isLoading ? null : _signUp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.primary,
                             foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -225,7 +224,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                   ),
                                 )
                               : const Text(
-                                  'Sign In',
+                                  'Sign Up',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -237,31 +236,22 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 32),
 
+                  // Sign In Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
+                        'Already have an account? ',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       TextButton(
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SignUpScreen(),
-                            ),
-                          );
-
-                          // If sign up was successful, close this screen too
-                          if (result != null && result['success'] == true && mounted) {
-                            Navigator.pop(context, result);
-                          }
+                        onPressed: () {
+                          Navigator.pop(context);
                         },
                         child: Text(
-                          'Sign Up',
+                          'Sign In',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,

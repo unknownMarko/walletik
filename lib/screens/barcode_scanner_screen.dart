@@ -55,14 +55,12 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
               setState(() => hasScanned = true);
 
-              // Return scanned data
               Navigator.pop(context, {
                 'code': barcode.rawValue,
                 'format': _mapBarcodeFormat(barcode.format),
               });
             },
           ),
-          // Scanning overlay with frame
           Center(
             child: Container(
               width: 300,
@@ -73,7 +71,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
               child: Stack(
                 children: [
-                  // Corner decorations
                   Positioned(
                     top: 0,
                     left: 0,
@@ -134,7 +131,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ),
           ),
-          // Instructions
           Positioned(
             bottom: 100,
             left: 0,
@@ -193,7 +189,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         return 'dataMatrix';
       case BarcodeFormat.upcA:
       case BarcodeFormat.upcE:
-        return 'code128'; // Fallback to code128 for UPC codes
+        return 'code128';
       default:
         return 'code128';
     }

@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
 
 import 'package:walletik/screens/home_screen.dart';
 import 'package:walletik/screens/cards_screen.dart';
 import 'package:walletik/screens/shopping_list_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 import 'package:walletik/providers/theme_provider.dart';
+import 'package:walletik/providers/auth_provider.dart';
+import 'package:walletik/services/connectivity_service.dart';
+import 'package:walletik/services/card_storage.dart';
+import 'package:walletik/services/sync_queue_service.dart';
+import 'package:walletik/widgets/offline_indicator.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+  }
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -47,6 +65,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool _isModalOpen = false;
   bool _isNavigating = false;
   int? _targetIndex;
+
+  final ConnectivityService _connectivityService = ConnectivityService();
+  bool _isOffline = false;
+  int _pendingSyncCount = 0;
+  StreamSubscription? _connectivitySubscription;
   
   late AnimationController _navBarAnimationController;
   late Animation<double> _navBarAnimation;
@@ -65,13 +88,45 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       parent: _navBarAnimationController,
       curve: Curves.easeInOut,
     ));
+
+    _isOffline = !_connectivityService.isOnline;
+    _updatePendingSyncCount();
+
+    _connectivitySubscription = _connectivityService.connectionStream.listen((isOnline) {
+      setState(() {
+        _isOffline = !isOnline;
+      });
+
+      if (isOnline) {
+        _syncWhenOnline();
+      } else {
+        _updatePendingSyncCount();
+      }
+    });
   }
   
   @override
   void dispose() {
     _navBarAnimationController.dispose();
     _pageController.dispose();
+    _connectivitySubscription?.cancel();
+    _connectivityService.dispose();
     super.dispose();
+  }
+
+  Future<void> _syncWhenOnline() async {
+    print('✅ Back online! Starting auto-sync...');
+    await CardStorage.processPendingSync();
+    await _updatePendingSyncCount();
+  }
+
+  Future<void> _updatePendingSyncCount() async {
+    final count = await SyncQueueService.getPendingCount();
+    if (mounted) {
+      setState(() {
+        _pendingSyncCount = count;
+      });
+    }
   }
   
   List<Widget> get _screens => [
@@ -115,26 +170,38 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-      body: PageView(
-        controller: _pageController,
-        physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
-        onPageChanged: (index) {
-          // Ignore intermediate page changes during navigation to non-adjacent screens
-          if (_isNavigating && _targetIndex != null && index != _targetIndex) {
-            return;
-          }
-          
-          setState(() {
-            _currentIndex = index;
-            // Reset navigation state when we reach the target
-            if (_isNavigating && index == _targetIndex) {
-              _isNavigating = false;
-              _targetIndex = null;
-            }
-          });
-        },
-        children: _screens,
-      ),
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          child: Column(
+            children: [
+              OfflineIndicator(
+                isOffline: _isOffline,
+                pendingSync: _pendingSyncCount,
+              ),
+              Expanded(
+                child: PageView(
+                controller: _pageController,
+                physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
+                onPageChanged: (index) {
+                  if (_isNavigating && _targetIndex != null && index != _targetIndex) {
+                    return;
+                  }
+
+                  setState(() {
+                    _currentIndex = index;
+                    if (_isNavigating && index == _targetIndex) {
+                      _isNavigating = false;
+                      _targetIndex = null;
+                    }
+                  });
+                },
+                  children: _screens,
+                ),
+              ),
+            ],
+          ),
+        ),
         bottomNavigationBar: AnimatedBuilder(
           animation: _navBarAnimation,
           builder: (context, child) {
@@ -152,18 +219,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     selectedIconTheme: const IconThemeData(size: 28),
                     unselectedIconTheme: const IconThemeData(size: 24),
                     onTap: _isModalOpen ? null : (index) {
-                      // Check if we're navigating to a non-adjacent screen
                       final isNonAdjacent = (index - _currentIndex).abs() > 1;
                       
                       if (isNonAdjacent) {
-                        // For non-adjacent screens, immediately update UI and track navigation
                         setState(() {
                           _currentIndex = index;
                           _isNavigating = true;
                           _targetIndex = index;
                         });
                       } else {
-                        // For adjacent screens, update normally
                         setState(() => _currentIndex = index);
                       }
                       

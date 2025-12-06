@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "508787134291",
+    "project_id": "walletik-de769",
+    "storage_bucket": "walletik-de769.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508787134291:android:4d17b97b7e57aac3069ba6",
+        "android_client_info": {
+          "package_name": "com.example.walletik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYw4xYgo80HcYYArEZUKgmCz8CDZ2TihQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

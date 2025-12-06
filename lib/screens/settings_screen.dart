@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/background_logo.dart';
+import '../services/card_storage.dart';
+import '../services/shopping_list_storage.dart';
 import 'signin_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -12,7 +15,23 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class SettingsScreenState extends State<SettingsScreen> {
-  bool isLoggedIn = false;
+  int _cardsCount = 0;
+  int _shoppingItemsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  Future<void> _loadCounts() async {
+    final cards = await CardStorage.loadCards();
+    final items = await ShoppingListStorage.loadItems();
+    setState(() {
+      _cardsCount = cards.length;
+      _shoppingItemsCount = items.length;
+    });
+  }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -25,68 +44,80 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isLoggedIn = authProvider.isAuthenticated;
+        final userName = authProvider.userName ?? 'User';
+        final userEmail = authProvider.userEmail ?? '';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Icon(
-              Icons.person,
-              size: 32,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isLoggedIn ? 'John Doe' : 'Guest',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Icon(
+                  Icons.person,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  isLoggedIn ? 'john.doe@example.com' : 'Sign in to sync your data',
-                  style: TextStyle(
-                    fontSize: 14,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isLoggedIn ? userEmail : 'Guest',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isLoggedIn
+                        ? '$_cardsCount cards • $_shoppingItemsCount items'
+                        : 'Sign in to sync your data',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isLoggedIn)
+                IconButton(
+                  onPressed: () {
+                    _showLogoutDialog();
+                  },
+                  icon: Icon(
+                    Icons.logout,
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
+                  tooltip: 'Sign out',
                 ),
-              ],
-            ),
+            ],
           ),
-          if (isLoggedIn)
-            IconButton(
-              onPressed: () {
-                _showLogoutDialog();
-              },
-              icon: Icon(
-                Icons.logout,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              tooltip: 'Sign out',
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -123,18 +154,25 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _logout() {
-    setState(() {
-      isLoggedIn = false;
-    });
+  Future<void> _logout() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signOut();
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Successfully signed out'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Successfully signed out'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Failed to sign out'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildSignInButton() {
@@ -151,22 +189,13 @@ class SettingsScreenState extends State<SettingsScreen> {
               ),
             );
 
-            if (result != null && result['success'] == true) {
-              setState(() {
-                isLoggedIn = true;
-              });
-              
-              // Show success message
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Successfully signed in with ${result['method'] == 'google' ? 'Google' : 'email'}!',
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
+            if (result != null && result['success'] == true && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Successfully signed in!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
             }
           },
           style: ElevatedButton.styleFrom(
@@ -195,32 +224,36 @@ class SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
         child: SafeArea(
-          child: ListView(
-        padding: const EdgeInsets.all(16),  
-        children: [
-          _buildUserCard(),
-          if (!isLoggedIn) _buildSignInButton(),
-          _buildSectionHeader('Appearance'),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return ListTile(
-                leading: const Icon(Icons.palette),
-                title: const Text('Theme Color'),
-                subtitle: Text(themeProvider.themeName),
-                trailing: Switch(
-                  value: themeProvider.isDarkTheme,
-                  onChanged: (val) => themeProvider.toggleTheme(),
-                ),
+          child: Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildUserCard(),
+                  if (!authProvider.isAuthenticated) _buildSignInButton(),
+                  _buildSectionHeader('Appearance'),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return ListTile(
+                        leading: const Icon(Icons.palette),
+                        title: const Text('Theme Color'),
+                        subtitle: Text(themeProvider.themeName),
+                        trailing: Switch(
+                          value: themeProvider.isDarkTheme,
+                          onChanged: (val) => themeProvider.toggleTheme(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildSectionHeader('About'),
+                  const ListTile(
+                    leading: Icon(Icons.info),
+                    title: Text('App Version'),
+                    subtitle: Text('0.0.1'),
+                  ),
+                ],
               );
             },
-          ),
-          _buildSectionHeader('About'),
-          const ListTile(
-            leading: Icon(Icons.info),
-            title: Text('App Version'),
-            subtitle: Text('0.0.1'),
-          ),
-        ],
           ),
         ),
       ),

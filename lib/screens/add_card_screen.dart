@@ -124,7 +124,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
           drawText: false,
         );
       } catch (e) {
-        // Fallback to code128 if format fails
         barcode = bc.Barcode.code128();
         svgCode = barcode.toSvg(
           code,
@@ -152,7 +151,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
           padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             children: [
-            // Shop name
             TextField(
               controller: nameController,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -169,7 +167,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Description
             TextField(
               controller: descriptionController,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -186,7 +183,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Card number
             TextField(
               controller: numberController,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -207,7 +203,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Category dropdown
             DropdownButtonFormField<String>(
               initialValue: selectedCategory,
               decoration: InputDecoration(
@@ -248,7 +243,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Favorite toggle
             Row(
               children: [
                 Icon(
@@ -277,7 +271,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Card Color Picker
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -336,7 +329,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Generated barcode
             if (svgCode != null)
               Column(
                 children: [
@@ -345,7 +337,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                 ],
               ),
 
-            // Save button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,

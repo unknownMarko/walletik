@@ -49,7 +49,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       allItems.insert(newIndex, item);
     });
     
-    // Save the new order to storage
     await ShoppingListStorage.saveItems(allItems);
   }
 
