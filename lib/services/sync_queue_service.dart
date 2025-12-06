@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firestore_service.dart';
 
@@ -15,7 +16,7 @@ class SyncQueueService {
       try {
         queue = (json.decode(queueJson) as List).cast<Map<String, dynamic>>();
       } catch (e) {
-        print('Error loading sync queue: $e');
+        debugPrint('Error loading sync queue: $e');
       }
     }
 
@@ -26,12 +27,12 @@ class SyncQueueService {
     });
 
     await prefs.setString(_queueKey, json.encode(queue));
-    print('📝 Queued $type operation (${queue.length} pending)');
+    debugPrint('📝 Queued $type operation (${queue.length} pending)');
   }
 
   static Future<void> processQueue() async {
     if (!_firestoreService.isAuthenticated) {
-      print('⚠️ Cannot process queue: user not authenticated');
+      debugPrint('⚠️ Cannot process queue: user not authenticated');
       return;
     }
 
@@ -39,7 +40,7 @@ class SyncQueueService {
     final queueJson = prefs.getString(_queueKey);
 
     if (queueJson == null) {
-      print('✅ Sync queue is empty');
+      debugPrint('✅ Sync queue is empty');
       return;
     }
 
@@ -47,16 +48,16 @@ class SyncQueueService {
     try {
       queue = (json.decode(queueJson) as List).cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Error loading sync queue: $e');
+      debugPrint('Error loading sync queue: $e');
       return;
     }
 
     if (queue.isEmpty) {
-      print('✅ Sync queue is empty');
+      debugPrint('✅ Sync queue is empty');
       return;
     }
 
-    print('🔄 Processing ${queue.length} queued operations...');
+    debugPrint('🔄 Processing ${queue.length} queued operations...');
 
     int successCount = 0;
     List<Map<String, dynamic>> failedOperations = [];
@@ -80,17 +81,17 @@ class SyncQueueService {
             break;
         }
       } catch (e) {
-        print('❌ Failed to sync operation: $e');
+        debugPrint('❌ Failed to sync operation: $e');
         failedOperations.add(operation);
       }
     }
 
     if (failedOperations.isEmpty) {
       await prefs.remove(_queueKey);
-      print('✅ All $successCount operations synced successfully!');
+      debugPrint('✅ All $successCount operations synced successfully!');
     } else {
       await prefs.setString(_queueKey, json.encode(failedOperations));
-      print('⚠️ Synced $successCount operations, ${failedOperations.length} failed');
+      debugPrint('⚠️ Synced $successCount operations, ${failedOperations.length} failed');
     }
   }
 
@@ -111,6 +112,6 @@ class SyncQueueService {
   static Future<void> clearQueue() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_queueKey);
-    print('🗑️ Sync queue cleared');
+    debugPrint('🗑️ Sync queue cleared');
   }
 }

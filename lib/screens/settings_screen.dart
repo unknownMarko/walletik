@@ -47,7 +47,6 @@ class SettingsScreenState extends State<SettingsScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final isLoggedIn = authProvider.isAuthenticated;
-        final userName = authProvider.userName ?? 'User';
         final userEmail = authProvider.userEmail ?? '';
 
         return Container(

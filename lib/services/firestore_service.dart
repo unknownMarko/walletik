@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -36,25 +37,25 @@ class FirestoreService {
   // Load all cards from Firestore
   Future<List<Map<String, dynamic>>> loadCards() async {
     if (!isAuthenticated) {
-      print('🔥 Firestore: User not authenticated');
+      debugPrint('🔥 Firestore: User not authenticated');
       return [];
     }
 
     try {
-      print('🔥 Firestore: Fetching cards from collection...');
+      debugPrint('🔥 Firestore: Fetching cards from collection...');
       final snapshot = await _userCardsCollection!.get();
-      print('🔥 Firestore: Got ${snapshot.docs.length} documents');
+      debugPrint('🔥 Firestore: Got ${snapshot.docs.length} documents');
 
       final cards = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
-        print('🔥 Firestore: Card - ${data['shopName']} (${data['cardNumber']})');
+        debugPrint('🔥 Firestore: Card - ${data['shopName']} (${data['cardNumber']})');
         return data;
       }).toList();
 
       return cards;
     } catch (e) {
-      print('❌ Firestore: Error loading cards - $e');
+      debugPrint('❌ Firestore: Error loading cards - $e');
       throw Exception('Failed to load cards from Firestore: $e');
     }
   }
