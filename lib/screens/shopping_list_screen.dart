@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../widgets/background_logo.dart';
-import '../services/shopping_list_storage.dart';
 import '../models/shopping_item.dart';
+import '../providers/shopping_provider.dart';
 import '../utils/constants.dart';
 
 class ShoppingListScreen extends StatefulWidget {
@@ -13,47 +14,23 @@ class ShoppingListScreen extends StatefulWidget {
 }
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
-  List<ShoppingItem> allItems = [];
+  Future<void> _onReorder(int oldIndex, int newIndex, ShoppingProvider provider) async {
+    final items = List<ShoppingItem>.from(provider.items);
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final item = items.removeAt(oldIndex);
+    items.insert(newIndex, item);
 
-  @override
-  void initState() {
-    super.initState();
-    _loadItems();
+    await provider.reorderItems(items);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  Future<void> _toggleItemCompletion(ShoppingItem item, ShoppingProvider provider) async {
+    await provider.toggleCompletion(item);
   }
 
-  Future<void> _loadItems() async {
-    final items = await ShoppingListStorage.loadItems();
-    setState(() {
-      allItems = items;
-    });
-  }
-
-  Future<void> _onReorder(int oldIndex, int newIndex) async {
-    setState(() {
-      if (oldIndex < newIndex) {
-        newIndex -= 1;
-      }
-      final item = allItems.removeAt(oldIndex);
-      allItems.insert(newIndex, item);
-    });
-    
-    await ShoppingListStorage.saveItems(allItems);
-  }
-
-
-  Future<void> _toggleItemCompletion(ShoppingItem item) async {
-    await ShoppingListStorage.toggleItemCompletion(item);
-    await _loadItems();
-  }
-
-  Future<void> _deleteItem(ShoppingItem item) async {
-    await ShoppingListStorage.removeItem(item);
-    await _loadItems();
+  Future<void> _deleteItem(ShoppingItem item, ShoppingProvider provider) async {
+    await provider.deleteItem(item);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,8 +39,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           action: SnackBarAction(
             label: 'Undo',
             onPressed: () async {
-              await ShoppingListStorage.addItem(item);
-              await _loadItems();
+              await provider.addItem(item);
             },
           ),
         ),
@@ -71,7 +47,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     }
   }
 
-  Future<void> _showAddEditDialog([ShoppingItem? existingItem]) async {
+  Future<void> _showAddEditDialog(ShoppingProvider provider, [ShoppingItem? existingItem]) async {
     final isEditing = existingItem != null;
     final nameController = TextEditingController(text: existingItem?.name ?? '');
     final quantityController = TextEditingController(
@@ -174,11 +150,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
     if (result != null) {
       if (isEditing) {
-        await ShoppingListStorage.updateItem(existingItem, result);
+        await provider.updateItem(existingItem, result);
       } else {
-        await ShoppingListStorage.addItem(result);
+        await provider.addItem(result);
       }
-      await _loadItems();
     }
   }
 
@@ -198,9 +173,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final shoppingProvider = context.watch<ShoppingProvider>();
+    final allItems = shoppingProvider.items;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final completedItems = allItems.where((item) => item.isCompleted).toList();
-    final pendingItems = allItems.where((item) => !item.isCompleted).toList();
+    final completedItems = shoppingProvider.completedItems;
+    final pendingItems = shoppingProvider.pendingItems;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -227,10 +204,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         maintainAnimation: true,
                         maintainState: true,
                         child: InkWell(
-                          onTap: () async {
-                            await ShoppingListStorage.clearCompleted();
-                            await _loadItems();
-                          },
+                          onTap: () => shoppingProvider.clearCompleted(),
                           borderRadius: BorderRadius.circular(4),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -281,7 +255,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     : ReorderableListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: allItems.length,
-                        onReorder: _onReorder,
+                        onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, shoppingProvider),
                         proxyDecorator: (Widget child, int index, Animation<double> animation) {
                           return AnimatedBuilder(
                             animation: animation,
@@ -326,7 +300,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            onDismissed: (direction) => _deleteItem(item),
+                            onDismissed: (direction) => _deleteItem(item, shoppingProvider),
                             child: Card(
                               margin: const EdgeInsets.symmetric(vertical: 4),
                               shape: RoundedRectangleBorder(
@@ -381,16 +355,16 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit, size: 20),
-                                      onPressed: () => _showAddEditDialog(item),
+                                      onPressed: () => _showAddEditDialog(shoppingProvider, item),
                                     ),
                                     Checkbox(
                                       value: isCompleted,
-                                      onChanged: (_) => _toggleItemCompletion(item),
+                                      onChanged: (_) => _toggleItemCompletion(item, shoppingProvider),
                                       activeColor: Theme.of(context).colorScheme.primary,
                                     ),
                                   ],
                                 ),
-                                onTap: () => _showAddEditDialog(item),
+                                onTap: () => _showAddEditDialog(shoppingProvider, item),
                               ),
                             ),
                           );
@@ -402,7 +376,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditDialog(),
+        onPressed: () => _showAddEditDialog(shoppingProvider),
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),

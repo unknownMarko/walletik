@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
 import '../widgets/card_detail_modal.dart';
 import '../models/loyalty_card.dart';
 import '../widgets/background_logo.dart';
-import '../services/card_storage.dart';
+import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 
 class CardsScreen extends StatefulWidget {
@@ -19,18 +20,17 @@ class CardsScreen extends StatefulWidget {
 
 class _CardsScreenState extends State<CardsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<LoyaltyCard> allCards = [];
   List<LoyaltyCard> filteredCards = [];
   List<LoyaltyCard> displayCards = [];
   LoyaltyCard? selectedCard;
   LoyaltyCard? draggingCard;
   int? hoverIndex;
   Timer? _previewTimer;
+  List<LoyaltyCard> _lastProviderCards = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCards();
     _searchController.addListener(_filterCards);
   }
 
@@ -41,38 +41,38 @@ class _CardsScreenState extends State<CardsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadCards() async {
-    final loadedCards = await CardStorage.loadCards();
-    setState(() {
-      allCards = loadedCards;
-      filteredCards = loadedCards;
-      displayCards = List.from(loadedCards);
-    });
+  void _syncWithProvider(List<LoyaltyCard> providerCards) {
+    if (providerCards != _lastProviderCards) {
+      _lastProviderCards = providerCards;
+      _filterCards();
+    }
   }
 
-  Future<void> _onCardReorder(int fromIndex, int toIndex) async {
+  Future<void> _onCardReorder(int fromIndex, int toIndex, CardProvider provider) async {
+    final allCards = List<LoyaltyCard>.from(provider.cards);
+    final card = filteredCards.removeAt(fromIndex);
+    filteredCards.insert(toIndex, card);
+
+    final cardIndex = allCards.indexWhere((c) =>
+      c.shopName == card.shopName && c.cardNumber == card.cardNumber);
+    if (cardIndex != -1) {
+      allCards.removeAt(cardIndex);
+      allCards.insert(toIndex.clamp(0, allCards.length), card);
+    }
+
     setState(() {
-      final card = filteredCards.removeAt(fromIndex);
-      filteredCards.insert(toIndex, card);
-
-      final cardIndex = allCards.indexWhere((c) =>
-        c.shopName == card.shopName && c.cardNumber == card.cardNumber);
-      if (cardIndex != -1) {
-        allCards.removeAt(cardIndex);
-        allCards.insert(toIndex.clamp(0, allCards.length), card);
-      }
-
       displayCards = List.from(filteredCards);
     });
 
-    await CardStorage.saveCards(allCards);
+    await provider.reorderCards(allCards);
   }
 
   void _filterCards() {
+    final allCards = _lastProviderCards;
     final query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        filteredCards = allCards;
+        filteredCards = List.from(allCards);
       } else {
         filteredCards = allCards.where((card) {
           final shopName = card.shopName.toLowerCase();
@@ -133,6 +133,9 @@ class _CardsScreenState extends State<CardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cardProvider = context.watch<CardProvider>();
+    _syncWithProvider(cardProvider.cards);
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
@@ -194,8 +197,9 @@ class _CardsScreenState extends State<CardsScreen> {
                                   lastUsed: DateTime.now(),
                                 );
 
-                                await CardStorage.addCard(newCard);
-                                await _loadCards();
+                                if (mounted) {
+                                  await cardProvider.addCard(newCard);
+                                }
                               }
                             },
                             child: Container(
@@ -260,7 +264,7 @@ class _CardsScreenState extends State<CardsScreen> {
                                 c.shopName == draggedCard.shopName &&
                                 c.cardNumber == draggedCard.cardNumber);
                               if (fromIndex != -1) {
-                                _onCardReorder(fromIndex, index);
+                                _onCardReorder(fromIndex, index, cardProvider);
                               }
                               _resetPreview();
                             },
@@ -369,7 +373,7 @@ class _CardsScreenState extends State<CardsScreen> {
               CardDetailModal(
                 card: selectedCard,
                 onClose: closeModal,
-                onRefreshCards: _loadCards,
+                onRefreshCards: () => cardProvider.loadCards(),
                 onModalStateChanged: widget.onModalStateChanged,
               ),
             ],

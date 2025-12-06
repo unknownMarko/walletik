@@ -9,8 +9,11 @@ import 'package:walletik/screens/shopping_list_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 import 'package:walletik/providers/theme_provider.dart';
 import 'package:walletik/providers/auth_provider.dart';
+import 'package:walletik/providers/card_provider.dart';
+import 'package:walletik/providers/shopping_provider.dart';
+import 'package:walletik/repositories/card_repository_impl.dart';
+import 'package:walletik/repositories/shopping_repository_impl.dart';
 import 'package:walletik/services/connectivity_service.dart';
-import 'package:walletik/services/card_storage.dart';
 import 'package:walletik/services/sync_queue_service.dart';
 import 'package:walletik/widgets/offline_indicator.dart';
 
@@ -28,6 +31,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (context) => CardProvider(CardRepositoryImpl()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ShoppingProvider(ShoppingRepositoryImpl()),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -116,7 +125,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   Future<void> _syncWhenOnline() async {
     debugPrint('Back online! Starting auto-sync...');
-    await CardStorage.processPendingSync();
+    if (mounted) {
+      await context.read<CardProvider>().syncPendingOperations();
+    }
     await _updatePendingSyncCount();
   }
 

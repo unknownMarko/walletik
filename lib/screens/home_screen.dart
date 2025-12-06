@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/background_logo.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
 import '../widgets/card_detail_modal.dart';
 import '../models/loyalty_card.dart';
-import '../services/card_storage.dart';
+import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 import 'add_card_screen.dart';
 
@@ -22,28 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
-  List<LoyaltyCard> cards = [];
-  List<LoyaltyCard> recentCards = [];
-  List<LoyaltyCard> favoriteCards = [];
   LoyaltyCard? selectedCard;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCards();
-  }
-
-  Future<void> _loadCards() async {
-    final loadedCards = await CardStorage.loadCards();
-    setState(() {
-      cards = loadedCards;
-      recentCards = loadedCards.take(3).toList();
-      favoriteCards = loadedCards
-          .where((card) => card.isFavorite)
-          .take(3)
-          .toList();
-    });
-  }
 
   void closeModal() {
     setState(() {
@@ -57,7 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildStatsCard() {
+  Widget _buildStatsCard(int cardCount) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -104,7 +84,7 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${cards.length}',
+                  '$cardCount',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 28,
@@ -159,8 +139,9 @@ class HomeScreenState extends State<HomeScreen> {
                         lastUsed: DateTime.now(),
                       );
 
-                      await CardStorage.addCard(newCard);
-                      await _loadCards();
+                      if (mounted) {
+                        await context.read<CardProvider>().addCard(newCard);
+                      }
                     }
                   },
                   icon: const Icon(Icons.add),
@@ -196,7 +177,7 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFavoriteCards() {
+  Widget _buildFavoriteCards(List<LoyaltyCard> favoriteCards) {
     if (favoriteCards.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -264,7 +245,7 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecentCards() {
+  Widget _buildRecentCards(List<LoyaltyCard> recentCards, int totalCount) {
     if (recentCards.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -285,7 +266,7 @@ class HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              if (cards.length > 3)
+              if (totalCount > 3)
                 TextButton(
                   onPressed: () => widget.onNavigateToCards?.call(1),
                   child: const Text('View All'),
@@ -333,6 +314,11 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cardProvider = context.watch<CardProvider>();
+    final cards = cardProvider.cards;
+    final recentCards = cardProvider.recentCards;
+    final favoriteCards = cardProvider.favoriteCards;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
@@ -388,14 +374,14 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          _buildStatsCard(),
+                          _buildStatsCard(cards.length),
                           const SizedBox(height: 24),
                           _buildQuickActions(),
                           const SizedBox(height: 24),
-                          _buildFavoriteCards(),
+                          _buildFavoriteCards(favoriteCards),
                           if (favoriteCards.isNotEmpty)
                             const SizedBox(height: 24),
-                          _buildRecentCards(),
+                          _buildRecentCards(recentCards, cards.length),
                           const SizedBox(height: 24),
                         ],
                       ),
@@ -406,7 +392,7 @@ class HomeScreenState extends State<HomeScreen> {
               CardDetailModal(
                 card: selectedCard,
                 onClose: closeModal,
-                onRefreshCards: _loadCards,
+                onRefreshCards: () => cardProvider.loadCards(),
                 onModalStateChanged: widget.onModalStateChanged,
               ),
             ],
