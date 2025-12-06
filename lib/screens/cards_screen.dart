@@ -5,56 +5,9 @@ import '../widgets/loyalty_card.dart';
 import '../widgets/background_logo.dart';
 import '../services/card_storage.dart';
 import '../utils/color_utils.dart';
-import 'package:barcode/barcode.dart';
+import '../utils/route_transitions.dart';
+import '../utils/barcode_utils.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-class FadeScalePageRoute<T> extends PageRoute<T> {
-  final WidgetBuilder builder;
-
-  FadeScalePageRoute({required this.builder});
-
-  @override
-  Color? get barrierColor => Colors.black54;
-
-  @override
-  String? get barrierLabel => null;
-
-  @override
-  bool get barrierDismissible => false;
-
-  @override
-  Widget buildPage(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-  ) {
-    return builder(context);
-  }
-
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    return FadeTransition(
-      opacity: animation,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.9, end: 1.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        ),
-        child: child,
-      ),
-    );
-  }
-
-  @override
-  bool get maintainState => true;
-
-  @override
-  Duration get transitionDuration => const Duration(milliseconds: 300);
-}
 
 class CardsScreen extends StatefulWidget {
   final Function(bool)? onModalStateChanged;
@@ -238,43 +191,6 @@ class _CardsScreenState extends State<CardsScreen>
     Future.delayed(const Duration(milliseconds: 100), () {
       _contentController.forward();
     });
-  }
-
-  String _generateBarcode(String data, String format) {
-    Barcode barcode;
-    switch (format) {
-      case 'qrCode':
-        barcode = Barcode.qrCode();
-        break;
-      case 'ean13':
-        barcode = Barcode.ean13();
-        break;
-      case 'code39':
-        barcode = Barcode.code39();
-        break;
-      case 'pdf417':
-        barcode = Barcode.pdf417();
-        break;
-      case 'ean8':
-        barcode = Barcode.ean8();
-        break;
-      case 'dataMatrix':
-        barcode = Barcode.dataMatrix();
-        break;
-      default:
-        barcode = Barcode.code128();
-    }
-
-    try {
-      return barcode.toSvg(
-        data,
-        width: format == 'qrCode' ? 200 : 280,
-        height: format == 'qrCode' ? 200 : 80,
-      );
-    } catch (e) {
-      final fallbackBarcode = Barcode.code128();
-      return fallbackBarcode.toSvg(data, width: 280, height: 80);
-    }
   }
 
   @override
@@ -702,7 +618,7 @@ class _CardsScreenState extends State<CardsScreen>
                                                                         ),
                                                                   ),
                                                               child: SvgPicture.string(
-                                                                _generateBarcode(
+                                                                BarcodeUtils.generate(
                                                                   selectedCard!['cardNumber'],
                                                                   selectedCard!['barcodeFormat'] ??
                                                                       'code128',
