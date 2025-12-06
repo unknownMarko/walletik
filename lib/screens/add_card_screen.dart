@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:barcode/barcode.dart' as bc;
 import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/constants.dart';
 import '../utils/color_utils.dart';
+import '../utils/barcode_utils.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddCardScreen extends StatefulWidget {
@@ -89,51 +89,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   @override
   Widget build(BuildContext context) {
     final String code = numberController.text;
-
-    String? svgCode;
-    if (code.isNotEmpty) {
-      bc.Barcode barcode;
-      switch (barcodeFormat) {
-        case 'qrCode':
-          barcode = bc.Barcode.qrCode();
-          break;
-        case 'ean13':
-          barcode = bc.Barcode.ean13();
-          break;
-        case 'code39':
-          barcode = bc.Barcode.code39();
-          break;
-        case 'pdf417':
-          barcode = bc.Barcode.pdf417();
-          break;
-        case 'ean8':
-          barcode = bc.Barcode.ean8();
-          break;
-        case 'dataMatrix':
-          barcode = bc.Barcode.dataMatrix();
-          break;
-        default:
-          barcode = bc.Barcode.code128();
-      }
-      
-      try {
-        svgCode = barcode.toSvg(
-          code,
-          width: barcodeFormat == 'qrCode' ? 200 : 300,
-          height: barcodeFormat == 'qrCode' ? 200 : 100,
-          drawText: false,
-        );
-      } catch (e) {
-        barcode = bc.Barcode.code128();
-        svgCode = barcode.toSvg(
-          code,
-          width: 300,
-          height: 100,
-          drawText: false,
-        );
-        barcodeFormat = 'code128';
-      }
-    }
+    final String? svgCode = code.isNotEmpty ? BarcodeUtils.generate(code, barcodeFormat) : null;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
