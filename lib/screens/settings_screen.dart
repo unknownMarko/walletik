@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/card_provider.dart';
+import '../providers/shopping_provider.dart';
 import '../widgets/background_logo.dart';
-import '../services/card_storage.dart';
-import '../services/shopping_list_storage.dart';
 import 'signin_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -15,24 +15,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class SettingsScreenState extends State<SettingsScreen> {
-  int _cardsCount = 0;
-  int _shoppingItemsCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCounts();
-  }
-
-  Future<void> _loadCounts() async {
-    final cards = await CardStorage.loadCards();
-    final items = await ShoppingListStorage.loadItems();
-    setState(() {
-      _cardsCount = cards.length;
-      _shoppingItemsCount = items.length;
-    });
-  }
-
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -44,10 +26,12 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserCard() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return Consumer3<AuthProvider, CardProvider, ShoppingProvider>(
+      builder: (context, authProvider, cardProvider, shoppingProvider, child) {
         final isLoggedIn = authProvider.isAuthenticated;
         final userEmail = authProvider.userEmail ?? '';
+        final cardsCount = cardProvider.cards.length;
+        final itemsCount = shoppingProvider.items.length;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
@@ -92,7 +76,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       isLoggedIn
-                        ? '$_cardsCount cards • $_shoppingItemsCount items'
+                        ? '$cardsCount cards • $itemsCount items'
                         : 'Sign in to sync your data',
                       style: TextStyle(
                         fontSize: 14,
