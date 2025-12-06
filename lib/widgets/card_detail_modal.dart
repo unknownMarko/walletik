@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import '../models/loyalty_card.dart';
-import '../services/card_storage.dart';
+import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 import '../utils/barcode_utils.dart';
 import '../utils/route_transitions.dart';
@@ -348,7 +349,7 @@ class _CardDetailModalState extends State<CardDetailModal>
   Widget _buildFavoriteButton(LoyaltyCard card) {
     return IconButton(
       onPressed: () async {
-        await CardStorage.toggleFavorite(card);
+        await context.read<CardProvider>().toggleFavorite(card);
         await widget.onRefreshCards();
       },
       icon: Icon(
@@ -381,7 +382,9 @@ class _CardDetailModalState extends State<CardDetailModal>
             lastUsed: DateTime.now(),
           );
 
-          await CardStorage.updateCard(card, updatedCard);
+          if (mounted) {
+            await context.read<CardProvider>().updateCard(card, updatedCard);
+          }
           await widget.onRefreshCards();
           widget.onClose();
         }
@@ -426,7 +429,7 @@ class _CardDetailModalState extends State<CardDetailModal>
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(dialogContext);
-                await CardStorage.removeCard(card);
+                await context.read<CardProvider>().deleteCard(card);
                 await widget.onRefreshCards();
                 navigator.pop();
                 if (mounted) {
