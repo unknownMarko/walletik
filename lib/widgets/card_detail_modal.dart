@@ -176,7 +176,7 @@ class _CardDetailModalState extends State<CardDetailModal>
                               horizontal: 24,
                               vertical: 100,
                             ),
-                            height: 320,
+                            height: card.barcodeFormat == 'qrCode' ? 420 : 320,
                             decoration: BoxDecoration(
                               color: ColorUtils.hexToColor(card.color),
                               borderRadius: BorderRadius.circular(16),
