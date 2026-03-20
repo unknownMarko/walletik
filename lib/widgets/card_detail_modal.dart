@@ -337,24 +337,10 @@ class _CardDetailModalState extends State<CardDetailModal>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            _buildFavoriteButton(card),
             _buildEditButton(card),
             _buildDeleteButton(card),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFavoriteButton(LoyaltyCard card) {
-    return IconButton(
-      onPressed: () async {
-        await context.read<CardProvider>().toggleFavorite(card);
-        await widget.onRefreshCards();
-      },
-      icon: Icon(
-        card.isFavorite ? Icons.star : Icons.star_border,
-        color: card.isFavorite ? Colors.amber : Colors.white70,
       ),
     );
   }
@@ -376,8 +362,6 @@ class _CardDetailModalState extends State<CardDetailModal>
             cardNumber: result['code'] as String,
             color: (result['color'] as String?) ?? card.color,
             barcodeFormat: (result['barcodeFormat'] as String?) ?? card.barcodeFormat,
-            category: (result['category'] as String?) ?? card.category,
-            isFavorite: (result['isFavorite'] as bool?) ?? card.isFavorite,
             createdAt: card.createdAt,
             lastUsed: DateTime.now(),
           );

@@ -19,8 +19,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController numberController = TextEditingController();
   String barcodeFormat = 'code128';
-  String selectedCategory = 'Other';
-  bool isFavorite = false;
+
   String selectedColor = '#0066CC';
   bool get isEditMode => widget.editCard != null;
 
@@ -32,8 +31,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
       descriptionController.text = widget.editCard!['description'] ?? '';
       numberController.text = widget.editCard!['cardNumber'] ?? '';
       barcodeFormat = widget.editCard!['barcodeFormat'] ?? 'code128';
-      selectedCategory = widget.editCard!['category'] ?? 'Other';
-      isFavorite = widget.editCard!['isFavorite'] ?? false;
+
       selectedColor = widget.editCard!['color'] ?? '#0066CC';
     }
   }
@@ -80,8 +78,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
       'description': descriptionController.text,
       'code': numberController.text,
       'barcodeFormat': barcodeFormat,
-      'category': selectedCategory,
-      'isFavorite': isFavorite,
+
       'color': selectedColor,
     });
   }
@@ -101,12 +98,15 @@ class _AddCardScreenState extends State<AddCardScreen> {
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Column(
-            children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
             TextField(
               controller: nameController,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -159,72 +159,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ),
             const SizedBox(height: 20),
 
-            DropdownButtonFormField<String>(
-              initialValue: selectedCategory,
-              decoration: InputDecoration(
-                labelText: "Category",
-                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                ),
-              ),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              items: AppConstants.cardCategories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Row(
-                    children: [
-                      Icon(
-                        AppConstants.categoryIcons[category],
-                        color: AppConstants.categoryColors[category],
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        category,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCategory = value!;
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Icon(
-                  Icons.star,
-                  color: isFavorite ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Mark as favorite',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                Switch(
-                  value: isFavorite,
-                  onChanged: (value) {
-                    setState(() {
-                      isFavorite = value;
-                    });
-                  },
-                ),
-              ],
-            ),
             const SizedBox(height: 30),
 
             Column(
@@ -307,6 +241,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
             ],
           ),
         ),
+      );
+        },
       ),
     );
   }

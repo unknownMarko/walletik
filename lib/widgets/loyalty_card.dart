@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 
 class LoyaltyCard extends StatelessWidget {
   final String shopName;
@@ -7,8 +6,6 @@ class LoyaltyCard extends StatelessWidget {
   final String cardNumber;
   final Color cardColor;
   final String? logoUrl;
-  final String? category;
-  final bool? isFavorite;
 
   const LoyaltyCard({
     super.key,
@@ -17,8 +14,6 @@ class LoyaltyCard extends StatelessWidget {
     required this.cardNumber,
     required this.cardColor,
     this.logoUrl,
-    this.category,
-    this.isFavorite,
   });
 
   @override
@@ -39,106 +34,35 @@ class LoyaltyCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              shopName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (isFavorite == true)
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 18,
-                            ),
-                        ],
-                      ),
-                      if (category != null)
-                        Container(
-                          margin: const EdgeInsets.only(top: 2),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                AppConstants.categoryIcons[category!],
-                                color: Colors.white,
-                                size: 10,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                category!,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (logoUrl != null)
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.store,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
             Text(
-              description,
+              shopName,
               style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Card Number',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+            if (description.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 2),
+            ],
+            const Spacer(),
             Text(
               cardNumber,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
                 letterSpacing: 1,
               ),
               overflow: TextOverflow.ellipsis,

@@ -131,6 +131,43 @@ class _CardsScreenState extends State<CardsScreen> {
     });
   }
 
+  Future<void> _addCard(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddCardScreen(),
+      ),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      final newCard = LoyaltyCard(
+        shopName: result['name'] as String,
+        description: result['description'] as String?,
+        cardNumber: result['code'] as String,
+        color: (result['color'] as String?) ?? '#0066CC',
+        barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
+        createdAt: DateTime.now(),
+        lastUsed: DateTime.now(),
+      );
+
+      if (mounted) {
+        await context.read<CardProvider>().addCard(newCard);
+      }
+    }
+  }
+
+  Widget _buildCardItem(LoyaltyCard card, int index, CardProvider cardProvider) {
+    return GestureDetector(
+      onTap: () => _showCardDetail(card, index),
+      child: card_widget.LoyaltyCard(
+        shopName: card.shopName,
+        description: card.description ?? '',
+        cardNumber: card.cardNumber,
+        cardColor: ColorUtils.hexToColor(card.color),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cardProvider = context.watch<CardProvider>();
@@ -140,131 +177,116 @@ class _CardsScreenState extends State<CardsScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
         child: Stack(
-            children: [
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search cards...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.2,
-                          ),
-                      itemCount: displayCards.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == displayCards.length) {
-                          return GestureDetector(
-                            onTap: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const AddCardScreen(),
+          children: [
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search cards...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  bottomLeft: Radius.circular(12),
                                 ),
-                              );
-
-                              if (result != null &&
-                                  result is Map<String, dynamic>) {
-                                final newCard = LoyaltyCard(
-                                  shopName: result['name'] as String,
-                                  description: result['description'] as String?,
-                                  cardNumber: result['code'] as String,
-                                  color: (result['color'] as String?) ?? '#0066CC',
-                                  barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
-                                  category: (result['category'] as String?) ?? 'Other',
-                                  isFavorite: (result['isFavorite'] as bool?) ?? false,
-                                  createdAt: DateTime.now(),
-                                  lastUsed: DateTime.now(),
-                                );
-
-                                if (mounted) {
-                                  await cardProvider.addCard(newCard);
-                                }
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Theme.of(context).colorScheme.outline,
-                                  width: 2,
-                                  strokeAlign: BorderSide.strokeAlignInside,
-                                ),
-                                color: Theme.of(context).colorScheme.surface,
+                                borderSide: BorderSide.none,
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add,
-                                    size: 40,
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.white
-                                        : Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Add Card',
-                                    style: TextStyle(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? Colors.white
-                                          : Theme.of(context).colorScheme.primary,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                              filled: true,
+                              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () => _addCard(context),
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.add,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Add',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: (displayCards.length + 1) ~/ 2,
+                    itemBuilder: (context, rowIndex) {
+                      final leftIndex = rowIndex * 2;
+                      final rightIndex = leftIndex + 1;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 100,
+                                child: _buildCardItem(displayCards[leftIndex], leftIndex, cardProvider),
                               ),
                             ),
-                          );
-                        } else {
-                          final card = displayCards[index];
-                          return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            transitionBuilder: (child, animation) {
-                              return ScaleTransition(
-                                scale: animation,
-                                child: child,
-                              );
-                            },
-                            child: DragTarget<LoyaltyCard>(
-                              key: ValueKey('${card.shopName}_${card.cardNumber}_$index'),
-                            onWillAcceptWithDetails: (details) => details.data != card,
-                            onMove: (details) {
-                              _startPreviewTimer(details.data, index);
-                            },
-                            onLeave: (data) {
-                              _resetPreview();
-                            },
-                            onAcceptWithDetails: (details) {
-                              final draggedCard = details.data;
-                              final fromIndex = filteredCards.indexWhere((c) =>
-                                c.shopName == draggedCard.shopName &&
-                                c.cardNumber == draggedCard.cardNumber);
-                              if (fromIndex != -1) {
-                                _onCardReorder(fromIndex, index, cardProvider);
-                              }
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: rightIndex < displayCards.length
+                                  ? SizedBox(
+                                      height: 100,
+                                      child: _buildCardItem(displayCards[rightIndex], rightIndex, cardProvider),
+                                    )
+                                  : const SizedBox(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            CardDetailModal(
+              card: selectedCard,
+              onClose: closeModal,
+              onRefreshCards: () => cardProvider.loadCards(),
+              onModalStateChanged: widget.onModalStateChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
                               _resetPreview();
                             },
                             builder: (context, candidateData, rejectedData) {
@@ -351,19 +373,16 @@ class _CardsScreenState extends State<CardsScreen> {
                                         description: card.description ?? '',
                                         cardNumber: card.cardNumber,
                                         cardColor: ColorUtils.hexToColor(card.color),
-                                        category: card.category,
-                                        isFavorite: card.isFavorite,
                                       ),
                                     ),
                                   ),
                                 ),
-                                  ),
-                                ),
+                                   ),
+                                 ),
                               );
                             },
                             ),
                           );
-                        }
                       },
                     ),
                   ),
