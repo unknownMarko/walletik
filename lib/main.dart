@@ -1,36 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'dart:async';
 
 import 'package:walletik/screens/home_screen.dart';
 import 'package:walletik/screens/cards_screen.dart';
 import 'package:walletik/screens/shopping_list_screen.dart';
 import 'package:walletik/screens/settings_screen.dart';
 import 'package:walletik/providers/theme_provider.dart';
-import 'package:walletik/providers/auth_provider.dart';
 import 'package:walletik/providers/card_provider.dart';
 import 'package:walletik/providers/shopping_provider.dart';
 import 'package:walletik/repositories/card_repository_impl.dart';
 import 'package:walletik/repositories/shopping_repository_impl.dart';
-import 'package:walletik/services/connectivity_service.dart';
-import 'package:walletik/services/sync_queue_service.dart';
-import 'package:walletik/widgets/offline_indicator.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
-  }
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(
           create: (context) => CardProvider(CardRepositoryImpl()),
         ),
@@ -75,12 +62,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool _isNavigating = false;
   int? _targetIndex;
 
-  final ConnectivityService _connectivityService = ConnectivityService();
-  bool _isOffline = false;
-  int _pendingSyncCount = 0;
-  StreamSubscription? _connectivitySubscription;
-  bool _hasSyncedOnce = false;
-  
   late AnimationController _navBarAnimationController;
   late Animation<double> _navBarAnimation;
 
@@ -98,54 +79,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       parent: _navBarAnimationController,
       curve: Curves.easeInOut,
     ));
-
-    _isOffline = !_connectivityService.isOnline;
-    _updatePendingSyncCount();
-
-    _connectivitySubscription = _connectivityService.connectionStream.listen((isOnline) {
-      setState(() {
-        _isOffline = !isOnline;
-      });
-
-      if (isOnline) {
-        _syncWhenOnline();
-      } else {
-        _hasSyncedOnce = false; // Reset so next online triggers sync
-        _updatePendingSyncCount();
-      }
-    });
   }
-  
+
   @override
   void dispose() {
     _navBarAnimationController.dispose();
     _pageController.dispose();
-    _connectivitySubscription?.cancel();
-    _connectivityService.dispose();
     super.dispose();
   }
 
-  Future<void> _syncWhenOnline() async {
-    // Prevent multiple syncs from duplicate connectivity events
-    if (_hasSyncedOnce) return;
-    _hasSyncedOnce = true;
-
-    debugPrint('Back online! Starting auto-sync...');
-    if (mounted) {
-      await context.read<CardProvider>().syncPendingOperations();
-    }
-    await _updatePendingSyncCount();
-  }
-
-  Future<void> _updatePendingSyncCount() async {
-    final count = await SyncQueueService.getPendingCount();
-    if (mounted) {
-      setState(() {
-        _pendingSyncCount = count;
-      });
-    }
-  }
-  
   List<Widget> get _screens => [
     HomeScreen(
       onNavigateToCards: (index) {
@@ -190,33 +132,23 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         body: SafeArea(
           top: true,
           bottom: false,
-          child: Column(
-            children: [
-              OfflineIndicator(
-                isOffline: _isOffline,
-                pendingSync: _pendingSyncCount,
-              ),
-              Expanded(
-                child: PageView(
-                controller: _pageController,
-                physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
-                onPageChanged: (index) {
-                  if (_isNavigating && _targetIndex != null && index != _targetIndex) {
-                    return;
-                  }
+          child: PageView(
+            controller: _pageController,
+            physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
+            onPageChanged: (index) {
+              if (_isNavigating && _targetIndex != null && index != _targetIndex) {
+                return;
+              }
 
-                  setState(() {
-                    _currentIndex = index;
-                    if (_isNavigating && index == _targetIndex) {
-                      _isNavigating = false;
-                      _targetIndex = null;
-                    }
-                  });
-                },
-                  children: _screens,
-                ),
-              ),
-            ],
+              setState(() {
+                _currentIndex = index;
+                if (_isNavigating && index == _targetIndex) {
+                  _isNavigating = false;
+                  _targetIndex = null;
+                }
+              });
+            },
+            children: _screens,
           ),
         ),
         bottomNavigationBar: AnimatedBuilder(
@@ -237,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     unselectedIconTheme: const IconThemeData(size: 24),
                     onTap: _isModalOpen ? null : (index) {
                       final isNonAdjacent = (index - _currentIndex).abs() > 1;
-                      
+
                       if (isNonAdjacent) {
                         setState(() {
                           _currentIndex = index;
@@ -247,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       } else {
                         setState(() => _currentIndex = index);
                       }
-                      
+
                       _pageController.animateToPage(
                         index,
                         duration: const Duration(milliseconds: 300),
