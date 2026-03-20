@@ -47,11 +47,8 @@ class HomeScreenState extends State<HomeScreen>
     widget.onCardTap?.call(card);
   }
 
-  Widget _buildQuickAccessCards(CardProvider cardProvider) {
+  Widget _buildQuickAccessCards(LoyaltyCard? primary, LoyaltyCard? secondary, LoyaltyCard? third) {
     final colorScheme = Theme.of(context).colorScheme;
-    final primary = cardProvider.primaryCard;
-    final secondary = cardProvider.secondaryCard;
-    final third = cardProvider.thirdCard;
 
     final hasAny = primary != null || secondary != null || third != null;
     if (!hasAny) return const SizedBox.shrink();
@@ -231,8 +228,7 @@ class HomeScreenState extends State<HomeScreen>
 
   Widget _buildShoppingPreview() {
     final colorScheme = Theme.of(context).colorScheme;
-    final shoppingProvider = context.watch<ShoppingProvider>();
-    final pendingCount = shoppingProvider.pendingItems.length;
+    final pendingCount = context.select<ShoppingProvider, int>((p) => p.pendingItems.length);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -358,13 +354,13 @@ class HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final cardProvider = context.watch<CardProvider>();
-    final cards = cardProvider.cards;
+    final cards = context.select<CardProvider, List<LoyaltyCard>>((p) => p.cards);
+    final primaryCard = context.select<CardProvider, LoyaltyCard?>((p) => p.primaryCard);
+    final secondaryCard = context.select<CardProvider, LoyaltyCard?>((p) => p.secondaryCard);
+    final thirdCard = context.select<CardProvider, LoyaltyCard?>((p) => p.thirdCard);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: BackgroundLogo(
-        child: SingleChildScrollView(
+    return BackgroundLogo(
+      child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -414,7 +410,7 @@ class HomeScreenState extends State<HomeScreen>
                           _buildEmptyState(),
                         ] else ...[
                           // 3. Quick access cards
-                          _buildQuickAccessCards(cardProvider),
+                          _buildQuickAccessCards(primaryCard, secondaryCard, thirdCard),
                           // 4. Shopping list preview
                           _buildShoppingPreview(),
                           const SizedBox(height: 24),
@@ -423,7 +419,6 @@ class HomeScreenState extends State<HomeScreen>
                       ],
                     ),
                    ),
-      ),
       );
   }
 }

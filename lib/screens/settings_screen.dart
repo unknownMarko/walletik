@@ -248,10 +248,8 @@ class SettingsScreenState extends State<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: BackgroundLogo(
-        child: ListView(
+    return BackgroundLogo(
+      child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _buildUserCard(),
@@ -279,7 +277,6 @@ class SettingsScreenState extends State<SettingsScreen>
               ),
             ],
           ),
-      ),
       );
   }
 }

@@ -34,16 +34,21 @@ class _CardsScreenState extends State<CardsScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final cards = context.read<CardProvider>().cards;
+    if (cards != _lastProviderCards) {
+      _lastProviderCards = cards;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _filterCards();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _syncWithProvider(List<LoyaltyCard> providerCards) {
-    if (providerCards != _lastProviderCards) {
-      _lastProviderCards = providerCards;
-      _filterCards();
-    }
   }
 
   Future<void> _onCardReorder(int fromIndex, int toIndex, CardProvider provider) async {
@@ -116,7 +121,7 @@ class _CardsScreenState extends State<CardsScreen>
     }
   }
 
-  Widget _buildCardItem(LoyaltyCard card, int index, CardProvider cardProvider) {
+  Widget _buildCardItem(LoyaltyCard card, int index) {
     return GestureDetector(
       onTap: () => _showCardDetail(card, index),
       child: card_widget.LoyaltyCard(
@@ -131,13 +136,10 @@ class _CardsScreenState extends State<CardsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final cardProvider = context.watch<CardProvider>();
-    _syncWithProvider(cardProvider.cards);
+    context.select<CardProvider, List<LoyaltyCard>>((p) => p.cards);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: BackgroundLogo(
-        child: Column(
+    return BackgroundLogo(
+      child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -214,7 +216,7 @@ class _CardsScreenState extends State<CardsScreen>
                             Expanded(
                               child: SizedBox(
                                 height: 100,
-                                child: _buildCardItem(displayCards[leftIndex], leftIndex, cardProvider),
+                                child: _buildCardItem(displayCards[leftIndex], leftIndex),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -222,7 +224,7 @@ class _CardsScreenState extends State<CardsScreen>
                               child: rightIndex < displayCards.length
                                   ? SizedBox(
                                       height: 100,
-                                      child: _buildCardItem(displayCards[rightIndex], rightIndex, cardProvider),
+                                      child: _buildCardItem(displayCards[rightIndex], rightIndex),
                                     )
                                   : const SizedBox(),
                             ),
@@ -234,7 +236,6 @@ class _CardsScreenState extends State<CardsScreen>
                 ),
               ],
           ),
-      ),
       );
   }
 }

@@ -120,6 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         bottom: false,
         child: PageView(
           controller: _pageController,
+          allowImplicitScrolling: true,
           physics: _isModalOpen ? const NeverScrollableScrollPhysics() : null,
           onPageChanged: (index) {
             if (_isNavigating && _targetIndex != null && index != _targetIndex) {

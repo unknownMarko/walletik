@@ -145,14 +145,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final shoppingProvider = context.watch<ShoppingProvider>();
-    final allItems = shoppingProvider.items;
+    final allItems = context.select<ShoppingProvider, List<ShoppingItem>>((p) => p.items);
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: BackgroundLogo(
-        child: Column(
+    return BackgroundLogo(
+      child: Column(
             children: [
 
               Padding(
@@ -199,13 +196,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                             ),
                           ),
                           textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _quickAdd(shoppingProvider),
+                          onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
                         ),
                       ),
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: () => _quickAdd(shoppingProvider),
+                      onTap: () => _quickAdd(context.read<ShoppingProvider>()),
                       child: Container(
                         height: 48,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -271,7 +268,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                     : ReorderableListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: allItems.length,
-                        onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, shoppingProvider),
+                        onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, context.read<ShoppingProvider>()),
                         proxyDecorator: (Widget child, int index, Animation<double> animation) {
                           return AnimatedBuilder(
                             animation: animation,
@@ -316,10 +313,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                 color: Colors.white,
                               ),
                             ),
-                            onDismissed: (direction) => _deleteItem(item, shoppingProvider),
+                            onDismissed: (direction) => _deleteItem(item, context.read<ShoppingProvider>()),
                             child: GestureDetector(
-                              onTap: () => _toggleItemCompletion(item, shoppingProvider),
-                              onLongPress: () => _showEditDialog(shoppingProvider, item),
+                              onTap: () => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
+                              onLongPress: () => _showEditDialog(context.read<ShoppingProvider>(), item),
                               child: Container(
                                 height: 48,
                                 margin: const EdgeInsets.symmetric(vertical: 3),
@@ -352,7 +349,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                       height: 24,
                                       child: Checkbox(
                                         value: isCompleted,
-                                        onChanged: (_) => _toggleItemCompletion(item, shoppingProvider),
+                                        onChanged: (_) => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
                                         activeColor: Theme.of(context).colorScheme.primary,
                                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
@@ -367,7 +364,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
               ),
             ],
           ),
-    ),
     );
   }
 }
