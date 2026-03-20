@@ -8,6 +8,8 @@ class CardProvider extends ChangeNotifier {
   final CardRepository _repository;
 
   List<LoyaltyCard> _cards = [];
+  List<LoyaltyCard> _recentCards = [];
+  List<LoyaltyCard> _favoriteCards = [];
   bool _isLoading = false;
   String? _error;
 
@@ -20,12 +22,16 @@ class CardProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Get recent cards (first 3)
-  List<LoyaltyCard> get recentCards => _cards.take(3).toList();
+  /// Get recent cards (first 3) — cached
+  List<LoyaltyCard> get recentCards => _recentCards;
 
-  /// Get favorite cards (first 3)
-  List<LoyaltyCard> get favoriteCards =>
-      _cards.where((card) => card.isFavorite).take(3).toList();
+  /// Get favorite cards (first 3) — cached
+  List<LoyaltyCard> get favoriteCards => _favoriteCards;
+
+  void _updateDerivedLists() {
+    _recentCards = _cards.take(3).toList();
+    _favoriteCards = _cards.where((card) => card.isFavorite).take(3).toList();
+  }
 
   /// Load all cards from repository
   Future<void> loadCards() async {
@@ -35,9 +41,9 @@ class CardProvider extends ChangeNotifier {
 
     try {
       _cards = await _repository.loadCards();
+      _updateDerivedLists();
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.loadCards error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -51,7 +57,6 @@ class CardProvider extends ChangeNotifier {
       await loadCards();
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.addCard error: $e');
       notifyListeners();
     }
   }
@@ -63,7 +68,6 @@ class CardProvider extends ChangeNotifier {
       await loadCards();
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.updateCard error: $e');
       notifyListeners();
     }
   }
@@ -75,7 +79,6 @@ class CardProvider extends ChangeNotifier {
       await loadCards();
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.deleteCard error: $e');
       notifyListeners();
     }
   }
@@ -87,7 +90,6 @@ class CardProvider extends ChangeNotifier {
       await loadCards();
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.toggleFavorite error: $e');
       notifyListeners();
     }
   }
@@ -96,9 +98,8 @@ class CardProvider extends ChangeNotifier {
   Future<void> updateLastUsed(LoyaltyCard card) async {
     try {
       await _repository.updateLastUsed(card);
-      // Don't reload all cards for this minor update
-    } catch (e) {
-      debugPrint('CardProvider.updateLastUsed error: $e');
+    } catch (_) {
+      // Silent failure for non-critical operation
     }
   }
 
@@ -106,11 +107,11 @@ class CardProvider extends ChangeNotifier {
   Future<void> reorderCards(List<LoyaltyCard> cards) async {
     try {
       _cards = cards;
+      _updateDerivedLists();
       notifyListeners();
       await _repository.reorderCards(cards);
     } catch (e) {
       _error = e.toString();
-      debugPrint('CardProvider.reorderCards error: $e');
       await loadCards(); // Reload on error
     }
   }

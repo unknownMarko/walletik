@@ -4,9 +4,14 @@ import '../models/loyalty_card.dart';
 
 class CardStorage {
   static const String _cardsKey = 'loyalty_cards';
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> get _instance async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
 
   static Future<List<LoyaltyCard>> loadCards() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance;
     final cardsJson = prefs.getString(_cardsKey);
 
     if (cardsJson == null) {
@@ -24,7 +29,7 @@ class CardStorage {
   }
 
   static Future<void> saveCards(List<LoyaltyCard> cards) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance;
     final cardsJson = json.encode(cards.map((c) => c.toJson()).toList());
     await prefs.setString(_cardsKey, cardsJson);
   }

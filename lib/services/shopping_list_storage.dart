@@ -4,9 +4,14 @@ import '../models/shopping_item.dart';
 
 class ShoppingListStorage {
   static const String _key = 'shopping_list_items';
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> get _instance async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
 
   static Future<List<ShoppingItem>> loadItems() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance;
     final String? itemsJson = prefs.getString(_key);
 
     if (itemsJson == null) {
@@ -24,7 +29,7 @@ class ShoppingListStorage {
   }
 
   static Future<void> saveItems(List<ShoppingItem> items) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance;
     final String itemsJson = json.encode(items.map((i) => i.toJson()).toList());
     await prefs.setString(_key, itemsJson);
   }

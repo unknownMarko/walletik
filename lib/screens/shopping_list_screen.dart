@@ -182,8 +182,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: SafeArea(
-          child: Column(
+        child: Column(
             children: [
               if (allItems.isNotEmpty)
                 Padding(
@@ -374,7 +373,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ],
           ),
         ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditDialog(shoppingProvider),
         backgroundColor: Theme.of(context).colorScheme.primary,
