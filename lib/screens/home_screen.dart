@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import '../widgets/background_logo.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import '../widgets/background_logo.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
-import '../widgets/card_detail_modal.dart';
 import '../models/loyalty_card.dart';
 import '../providers/card_provider.dart';
 import '../providers/shopping_provider.dart';
@@ -14,31 +13,38 @@ import '../utils/route_transitions.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToCards;
-  final Function(bool)? onModalStateChanged;
+  final Function(LoyaltyCard)? onCardTap;
 
   const HomeScreen({
     super.key,
     this.onNavigateToCards,
-    this.onModalStateChanged,
+    this.onCardTap,
   });
 
   @override
   HomeScreenState createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
-  LoyaltyCard? selectedCard;
+class HomeScreenState extends State<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
-  void closeModal() {
-    setState(() {
-      selectedCard = null;
-    });
+  // Barcode SVG cache
+  String? _cachedBarcodeSvg;
+  String? _cachedBarcodeKey;
+
+  String _getBarcodeSvg(String cardNumber, String barcodeFormat) {
+    final key = '${cardNumber}_$barcodeFormat';
+    if (_cachedBarcodeKey != key) {
+      _cachedBarcodeKey = key;
+      _cachedBarcodeSvg = BarcodeUtils.generate(cardNumber, barcodeFormat);
+    }
+    return _cachedBarcodeSvg!;
   }
 
   void _showCardDetail(LoyaltyCard card, int index) {
-    setState(() {
-      selectedCard = card;
-    });
+    widget.onCardTap?.call(card);
   }
 
   Widget _buildQuickAccessCards(CardProvider cardProvider) {
@@ -88,8 +94,8 @@ class HomeScreenState extends State<HomeScreen> {
                   child: secondary != null
                       ? GestureDetector(
                           onTap: () => _showCardDetail(secondary, 0),
-                          child: SizedBox(
-                            height: 155,
+                           child: SizedBox(
+                            height: 100,
                             child: card_widget.LoyaltyCard(
                               shopName: secondary.shopName,
                               description: secondary.description ?? '',
@@ -105,8 +111,8 @@ class HomeScreenState extends State<HomeScreen> {
                   child: third != null
                       ? GestureDetector(
                           onTap: () => _showCardDetail(third, 0),
-                          child: SizedBox(
-                            height: 155,
+                           child: SizedBox(
+                            height: 100,
                             child: card_widget.LoyaltyCard(
                               shopName: third.shopName,
                               description: third.description ?? '',
@@ -175,7 +181,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
               child: Center(
                 child: SvgPicture.string(
-                  BarcodeUtils.generate(card.cardNumber, card.barcodeFormat),
+                  _getBarcodeSvg(card.cardNumber, card.barcodeFormat),
                   width: isQr ? 120 : double.infinity,
                   height: isQr ? 120 : 60,
                   fit: BoxFit.contain,
@@ -351,18 +357,14 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final cardProvider = context.watch<CardProvider>();
     final cards = cardProvider.cards;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
+        child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -420,19 +422,8 @@ class HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 24),
                       ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-            CardDetailModal(
-              card: selectedCard,
-              onClose: closeModal,
-              onRefreshCards: () => cardProvider.loadCards(),
-              onModalStateChanged: widget.onModalStateChanged,
-            ),
-          ],
-        ),
+                   ),
       ),
-    );
+      );
   }
 }

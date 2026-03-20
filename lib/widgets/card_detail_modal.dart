@@ -27,68 +27,55 @@ class CardDetailModal extends StatefulWidget {
 }
 
 class _CardDetailModalState extends State<CardDetailModal>
-    with TickerProviderStateMixin {
-  late AnimationController _modalController;
-  late AnimationController _contentController;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
   late Animation<double> _backgroundAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _contentFadeAnimation;
 
   LoyaltyCard? _previousCard;
   bool _isVisible = false;
 
+  // Cached values to avoid recomputation during animation
+  String? _cachedBarcodeSvg;
+  Color? _cachedCardColor;
+  String? _cachedCardKey;
+
   @override
   void initState() {
     super.initState();
-    _initAnimations();
-  }
-
-  void _initAnimations() {
-    _modalController = AnimationController(
+    _controller = AnimationController(
       duration: const Duration(milliseconds: 250),
       vsync: this,
     );
-
-    _contentController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
+    _backgroundAnimation = Tween<double>(begin: 0.0, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-
-    _backgroundAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.7,
-    ).animate(CurvedAnimation(parent: _modalController, curve: Curves.easeOut));
-
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _modalController, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+  }
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _modalController, curve: Curves.easeOutCubic),
-    );
-
-    _contentFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      ),
-    );
+  void _updateCache(LoyaltyCard card) {
+    final key = '${card.cardNumber}_${card.barcodeFormat}_${card.color}';
+    if (_cachedCardKey != key) {
+      _cachedCardKey = key;
+      _cachedBarcodeSvg = BarcodeUtils.generate(card.cardNumber, card.barcodeFormat);
+      _cachedCardColor = ColorUtils.hexToColor(card.color);
+    }
   }
 
   @override
   void didUpdateWidget(CardDetailModal oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    // Card became visible
     if (widget.card != null && oldWidget.card == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _showModal();
       });
-    }
-    // Card became hidden
-    else if (widget.card == null && oldWidget.card != null) {
+    } else if (widget.card == null && oldWidget.card != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _hideModal();
       });
@@ -96,36 +83,27 @@ class _CardDetailModalState extends State<CardDetailModal>
   }
 
   void _showModal() {
+    _updateCache(widget.card!);
     setState(() {
       _isVisible = true;
       _previousCard = widget.card;
     });
-
-    // Defer notification to avoid setState during build
     Future.microtask(() {
       if (mounted) widget.onModalStateChanged?.call(true);
     });
-
-    _modalController.reset();
-    _contentController.reset();
-
-    _modalController.forward();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _contentController.forward();
-      }
-    });
+    _controller.forward(from: 0);
   }
 
   void _hideModal() {
-    _contentController.reverse();
-    _modalController.reverse().then((_) {
+    _controller.reverse().then((_) {
       if (mounted) {
         setState(() {
           _isVisible = false;
           _previousCard = null;
+          _cachedCardKey = null;
+          _cachedBarcodeSvg = null;
+          _cachedCardColor = null;
         });
-        // Defer notification to avoid setState during build
         Future.microtask(() {
           if (mounted) widget.onModalStateChanged?.call(false);
         });
@@ -135,8 +113,7 @@ class _CardDetailModalState extends State<CardDetailModal>
 
   @override
   void dispose() {
-    _modalController.dispose();
-    _contentController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -144,251 +121,150 @@ class _CardDetailModalState extends State<CardDetailModal>
 
   @override
   Widget build(BuildContext context) {
-    if (!_isVisible && widget.card == null) {
-      return const SizedBox.shrink();
-    }
-
+    if (!_isVisible && widget.card == null) return const SizedBox.shrink();
     final card = _displayCard;
-    if (card == null) {
-      return const SizedBox.shrink();
-    }
+    if (card == null) return const SizedBox.shrink();
 
-    return GestureDetector(
-      onTap: widget.onClose,
-      child: AnimatedBuilder(
-        animation: _backgroundAnimation,
-        builder: (context, child) {
-          return Container(
-            color: Colors.black.withValues(alpha: _backgroundAnimation.value),
+    _updateCache(card);
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: widget.onClose,
+          child: ColoredBox(
+            color: Color.fromRGBO(0, 0, 0, _backgroundAnimation.value),
             child: Center(
-              child: AnimatedBuilder(
-                animation: _modalController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _scaleAnimation.value,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Hero(
-                        tag: 'card_${card.shopName}_${card.cardNumber}',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 100,
-                            ),
-                            height: card.barcodeFormat == 'qrCode' ? 420 : 320,
-                            decoration: BoxDecoration(
-                              color: ColorUtils.hexToColor(card.color),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildContent(card),
-                                _buildCloseButton(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              child: Transform.scale(
+                scale: _scaleAnimation.value,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: child!,
+                ),
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
+      child: _buildCard(card),
+    );
+  }
+
+  Widget _buildCard(LoyaltyCard card) {
+    return GestureDetector(
+      onTap: () {},
+      child: Material(
+        type: MaterialType.transparency,
+        child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: _cachedCardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.3),
+              blurRadius: 20,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(card),
+                Divider(
+                  height: 16,
+                  thickness: 1,
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+                _buildBarcode(card),
+              ],
+            ),
+          ),
+        ),
+      ),
       ),
     );
   }
 
-  Widget _buildContent(LoyaltyCard card) {
+  Widget _buildHeader(LoyaltyCard card) {
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: AnimatedBuilder(
-        animation: _contentFadeAnimation,
-        builder: (context, child) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildShopName(card),
-              const SizedBox(height: 8),
-              _buildDescription(card),
-              const Spacer(),
-              _buildBarcode(card),
-              const SizedBox(height: 20),
-              _buildActionButtons(card),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildShopName(LoyaltyCard card) {
-    return FadeTransition(
-      opacity: _contentFadeAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.1),
-          end: Offset.zero,
-        ).animate(_contentController),
-        child: Text(
-          card.shopName,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            card.shopName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDescription(LoyaltyCard card) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _contentController,
-          curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+        GestureDetector(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              FadeScalePageRoute(
+                builder: (context) => AddCardScreen(editCard: card.toJson()),
+              ),
+            );
+            if (result != null && result is Map<String, dynamic>) {
+              final updatedCard = LoyaltyCard(
+                shopName: result['name'] as String,
+                description: result['description'] as String?,
+                cardNumber: result['code'] as String,
+                color: (result['color'] as String?) ?? card.color,
+                barcodeFormat: (result['barcodeFormat'] as String?) ?? card.barcodeFormat,
+                createdAt: card.createdAt,
+                lastUsed: DateTime.now(),
+              );
+              if (mounted) {
+                await context.read<CardProvider>().updateCard(card, updatedCard);
+              }
+              await widget.onRefreshCards();
+              widget.onClose();
+            }
+          },
+          child: const Icon(Icons.edit, color: Colors.white70, size: 20),
         ),
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.1),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-          ),
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _showDeleteDialog(card),
+          child: const Icon(Icons.delete, color: Colors.white70, size: 20),
         ),
-        child: Text(
-          card.description ?? '',
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 16,
-          ),
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: widget.onClose,
+          child: const Icon(Icons.close, color: Colors.white70, size: 22),
         ),
-      ),
+      ],
+    ),
     );
   }
 
   Widget _buildBarcode(LoyaltyCard card) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _contentController,
-          curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-        ),
-      ),
-      child: Transform.scale(
-        scale: Tween<double>(begin: 0.9, end: 1.0)
-            .animate(
-              CurvedAnimation(
-                parent: _contentController,
-                curve: const Interval(0.5, 1.0, curve: Curves.easeOutBack),
-              ),
-            )
-            .value,
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SvgPicture.string(
-              BarcodeUtils.generate(card.cardNumber, card.barcodeFormat),
-              width: card.barcodeFormat == 'qrCode' ? 200 : 280,
-              height: card.barcodeFormat == 'qrCode' ? 200 : 80,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(LoyaltyCard card) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _contentController,
-          curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
-        ),
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.2),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _buildEditButton(card),
-            _buildDeleteButton(card),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEditButton(LoyaltyCard card) {
-    return IconButton(
-      onPressed: () async {
-        final result = await Navigator.push(
-          context,
-          FadeScalePageRoute(
-            builder: (context) => AddCardScreen(editCard: card.toJson()),
-          ),
-        );
-
-        if (result != null && result is Map<String, dynamic>) {
-          final updatedCard = LoyaltyCard(
-            shopName: result['name'] as String,
-            description: result['description'] as String?,
-            cardNumber: result['code'] as String,
-            color: (result['color'] as String?) ?? card.color,
-            barcodeFormat: (result['barcodeFormat'] as String?) ?? card.barcodeFormat,
-            createdAt: card.createdAt,
-            lastUsed: DateTime.now(),
-          );
-
-          if (mounted) {
-            await context.read<CardProvider>().updateCard(card, updatedCard);
-          }
-          await widget.onRefreshCards();
-          widget.onClose();
-        }
-      },
-      icon: const Icon(Icons.edit, color: Colors.white70),
-    );
-  }
-
-  Widget _buildDeleteButton(LoyaltyCard card) {
+    if (_cachedBarcodeSvg == null) return const SizedBox.shrink();
     return Container(
-      width: 40,
-      height: 40,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: IconButton(
-        onPressed: () => _showDeleteDialog(card),
-        icon: const Icon(Icons.delete, color: Colors.white, size: 20),
-        padding: EdgeInsets.zero,
+      child: SvgPicture.string(
+        _cachedBarcodeSvg!,
+        width: double.infinity,
+          height: card.barcodeFormat == 'qrCode' ? 180 : 70,
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -428,35 +304,6 @@ class _CardDetailModalState extends State<CardDetailModal>
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCloseButton() {
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: FadeTransition(
-        opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
-          ),
-        ),
-        child: Transform.scale(
-          scale: Tween<double>(begin: 0.8, end: 1.0)
-              .animate(
-                CurvedAnimation(
-                  parent: _contentController,
-                  curve: const Interval(0.8, 1.0, curve: Curves.easeOutBack),
-                ),
-              )
-              .value,
-          child: IconButton(
-            onPressed: widget.onClose,
-            icon: const Icon(Icons.close, color: Colors.white, size: 28),
-          ),
-        ),
-      ),
     );
   }
 }
