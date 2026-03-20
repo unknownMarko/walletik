@@ -8,22 +8,26 @@ class BackgroundLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         Positioned(
           bottom: -15,
           left: 0,
           right: 0,
-          child: Opacity(
-            opacity: 0.3,
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                BlendMode.srcIn,
-              ),
-              child: Image.asset(
-                'assets/images/logo.png',
-                width: double.infinity,
-                fit: BoxFit.fitWidth,
+          child: RepaintBoundary(
+            child: Opacity(
+              opacity: 0.3,
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                  BlendMode.srcIn,
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: double.infinity,
+                  fit: BoxFit.fitWidth,
+                  filterQuality: FilterQuality.low,
+                ),
               ),
             ),
           ),

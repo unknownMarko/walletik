@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import '../widgets/background_logo.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
-import '../widgets/background_logo.dart';
 import '../models/shopping_item.dart';
 import '../providers/shopping_provider.dart';
-import '../utils/constants.dart';
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
@@ -13,7 +12,20 @@ class ShoppingListScreen extends StatefulWidget {
   State<ShoppingListScreen> createState() => _ShoppingListScreenState();
 }
 
-class _ShoppingListScreenState extends State<ShoppingListScreen> {
+class _ShoppingListScreenState extends State<ShoppingListScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  final _quickAddController = TextEditingController();
+  int _quickAddQuantity = 1;
+
+  @override
+  void dispose() {
+    _quickAddController.dispose();
+    super.dispose();
+  }
+
   Future<void> _onReorder(int oldIndex, int newIndex, ShoppingProvider provider) async {
     final items = List<ShoppingItem>.from(provider.items);
     if (oldIndex < newIndex) {
@@ -47,180 +59,185 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     }
   }
 
-  Future<void> _showAddEditDialog(ShoppingProvider provider, [ShoppingItem? existingItem]) async {
-    final isEditing = existingItem != null;
-    final nameController = TextEditingController(text: existingItem?.name ?? '');
-    final quantityController = TextEditingController(
-      text: existingItem?.quantity.toString() ?? '1'
+  Future<void> _quickAdd(ShoppingProvider provider) async {
+    final name = _quickAddController.text.trim();
+    if (name.isEmpty) return;
+    final item = ShoppingItem(
+      id: '',
+      name: name,
+      quantity: _quickAddQuantity,
+      category: 'Groceries',
+      createdAt: DateTime.now(),
     );
-    final notesController = TextEditingController(text: existingItem?.notes ?? '');
-    String selectedCategory = existingItem?.category ?? 'Groceries';
+    await provider.addItem(item);
+    _quickAddController.clear();
+    setState(() => _quickAddQuantity = 1);
+  }
+
+  Future<void> _showEditDialog(ShoppingProvider provider, ShoppingItem item) async {
+    final nameController = TextEditingController(text: item.name);
+    final quantityController = TextEditingController(text: item.quantity.toString());
 
     final result = await showDialog<ShoppingItem>(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(isEditing ? 'Edit Item' : 'Add Item'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Item Name',
-                        hintText: 'e.g., Milk, Bread',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: quantityController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantity',
-                        hintText: '1',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Category',
-                      ),
-                      items: AppConstants.shoppingCategories.map((category) {
-                        return DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedCategory = value!;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: notesController,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes (optional)',
-                        hintText: 'Additional details...',
-                      ),
-                    ),
-                  ],
+        return AlertDialog(
+          title: const Text('Edit Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Name',
+                    hintText: 'e.g., Milk, Bread',
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    if (nameController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter an item name')),
-                      );
-                      return;
-                    }
-
-                    final newItem = ShoppingItem(
-                      id: existingItem?.id ?? '',
-                      name: nameController.text.trim(),
-                      quantity: int.tryParse(quantityController.text) ?? 1,
-                      category: selectedCategory,
-                      notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
-                      isCompleted: existingItem?.isCompleted ?? false,
-                      createdAt: existingItem?.createdAt ?? DateTime.now(),
-                    );
-                    Navigator.pop(context, newItem);
-                  },
-                  child: Text(isEditing ? 'Save' : 'Add'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity',
+                    hintText: '1',
+                  ),
                 ),
               ],
-            );
-          },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter an item name')),
+                  );
+                  return;
+                }
+                final updated = ShoppingItem(
+                  id: item.id,
+                  name: nameController.text.trim(),
+                  quantity: int.tryParse(quantityController.text) ?? 1,
+                  category: item.category,
+                  isCompleted: item.isCompleted,
+                  createdAt: item.createdAt,
+                );
+                Navigator.pop(context, updated);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         );
       },
     );
 
     if (result != null) {
-      if (isEditing) {
-        await provider.updateItem(existingItem, result);
-      } else {
-        await provider.addItem(result);
-      }
+      await provider.updateItem(item, result);
     }
-  }
-
-  Widget _buildCategoryIcon(String category) {
-    final icon = AppConstants.shoppingCategoryIcons[category] ?? Icons.category;
-    final color = AppConstants.shoppingCategoryColors[category] ?? Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, color: color, size: 24),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final shoppingProvider = context.watch<ShoppingProvider>();
     final allItems = shoppingProvider.items;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final completedItems = shoppingProvider.completedItems;
-    final pendingItems = shoppingProvider.pendingItems;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
         child: Column(
             children: [
-              if (allItems.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${pendingItems.length} pending, ${completedItems.length} completed',
-                        style: TextStyle(
-                          color: isDarkTheme ? Colors.white70 : Colors.black54,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Visibility(
-                        visible: completedItems.isNotEmpty,
-                        maintainSize: true,
-                        maintainAnimation: true,
-                        maintainState: true,
-                        child: InkWell(
-                          onTap: () => shoppingProvider.clearCompleted(),
-                          borderRadius: BorderRadius.circular(4),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Text(
-                              'Clear completed',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: TextField(
+                          controller: _quickAddController,
+                          decoration: InputDecoration(
+                            hintText: 'Add item...',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomLeft: Radius.circular(12),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                            suffixIcon: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _quickAddQuantity = _quickAddQuantity >= 9 ? 1 : _quickAddQuantity + 1;
+                                });
+                              },
+                              child: Container(
+                                width: 36,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${_quickAddQuantity}x',
+                                  style: TextStyle(
+                                    color: _quickAddQuantity > 1
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _quickAdd(shoppingProvider),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () => _quickAdd(shoppingProvider),
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.add,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Add',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
               Expanded(
                 child: allItems.isEmpty
                     ? Center(
@@ -242,7 +259,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Tap + to add your first item',
+                              'Type above to add your first item',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDarkTheme ? Colors.white54 : Colors.black38,
@@ -300,70 +317,48 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                               ),
                             ),
                             onDismissed: (direction) => _deleteItem(item, shoppingProvider),
-                            child: Card(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              color: isCompleted
-                                  ? (isDarkTheme
-                                      ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.black.withValues(alpha: 0.05))
-                                  : (isDarkTheme
-                                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                                      : Colors.white),
-                              child: ListTile(
-                                leading: _buildCategoryIcon(item.category),
-                                title: Text(
-                                  item.name,
-                                  style: TextStyle(
-                                    decoration: isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                    color: isCompleted
-                                        ? (isDarkTheme ? Colors.white54 : Colors.black38)
-                                        : null,
-                                  ),
+                            child: GestureDetector(
+                              onTap: () => _toggleItemCompletion(item, shoppingProvider),
+                              onLongPress: () => _showEditDialog(shoppingProvider, item),
+                              child: Container(
+                                height: 48,
+                                margin: const EdgeInsets.symmetric(vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: isCompleted
+                                      ? (isDarkTheme
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : Colors.black.withValues(alpha: 0.05))
+                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Row(
                                   children: [
-                                    if (item.quantity != 1)
-                                      Text(
-                                        'Quantity: ${item.quantity}',
+                                    Expanded(
+                                      child: Text(
+                                        item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
                                         style: TextStyle(
+                                          fontSize: 16,
+                                          decoration: isCompleted ? TextDecoration.lineThrough : null,
                                           color: isCompleted
-                                              ? (isDarkTheme ? Colors.white38 : Colors.black26)
-                                              : null,
+                                              ? (isDarkTheme ? Colors.white54 : Colors.black38)
+                                              : Theme.of(context).colorScheme.onSurface,
                                         ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    if (item.notes != null && item.notes!.isNotEmpty)
-                                      Text(
-                                        item.notes!,
-                                        style: TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                          color: isCompleted
-                                              ? (isDarkTheme ? Colors.white38 : Colors.black26)
-                                              : null,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, size: 20),
-                                      onPressed: () => _showAddEditDialog(shoppingProvider, item),
                                     ),
-                                    Checkbox(
-                                      value: isCompleted,
-                                      onChanged: (_) => _toggleItemCompletion(item, shoppingProvider),
-                                      activeColor: Theme.of(context).colorScheme.primary,
+                                    SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: Checkbox(
+                                        value: isCompleted,
+                                        onChanged: (_) => _toggleItemCompletion(item, shoppingProvider),
+                                        activeColor: Theme.of(context).colorScheme.primary,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
                                     ),
                                   ],
                                 ),
-                                onTap: () => _showAddEditDialog(shoppingProvider, item),
                               ),
                             ),
                           );
@@ -372,12 +367,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               ),
             ],
           ),
-        ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditDialog(shoppingProvider),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-      ),
+    ),
     );
   }
 }

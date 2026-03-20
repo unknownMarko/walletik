@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../widgets/background_logo.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/card_provider.dart';
 import '../providers/shopping_provider.dart';
-import '../widgets/background_logo.dart';
 import '../utils/color_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,7 +13,11 @@ class SettingsScreen extends StatefulWidget {
   SettingsScreenState createState() => SettingsScreenState();
 }
 
-class SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends State<SettingsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -243,6 +247,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
@@ -274,7 +279,7 @@ class SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-        ),
+      ),
       );
   }
 }

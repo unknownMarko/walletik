@@ -1,31 +1,30 @@
 import 'package:flutter/material.dart';
+import '../widgets/background_logo.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
+
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
-import '../widgets/card_detail_modal.dart';
 import '../models/loyalty_card.dart';
-import '../widgets/background_logo.dart';
 import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 
 class CardsScreen extends StatefulWidget {
-  final Function(bool)? onModalStateChanged;
+  final Function(LoyaltyCard)? onCardTap;
 
-  const CardsScreen({super.key, this.onModalStateChanged});
+  const CardsScreen({super.key, this.onCardTap});
 
   @override
   State<CardsScreen> createState() => _CardsScreenState();
 }
 
-class _CardsScreenState extends State<CardsScreen> {
+class _CardsScreenState extends State<CardsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final TextEditingController _searchController = TextEditingController();
   List<LoyaltyCard> filteredCards = [];
   List<LoyaltyCard> displayCards = [];
-  LoyaltyCard? selectedCard;
-  LoyaltyCard? draggingCard;
-  int? hoverIndex;
-  Timer? _previewTimer;
   List<LoyaltyCard> _lastProviderCards = [];
 
   @override
@@ -37,7 +36,6 @@ class _CardsScreenState extends State<CardsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _previewTimer?.cancel();
     super.dispose();
   }
 
@@ -87,48 +85,10 @@ class _CardsScreenState extends State<CardsScreen> {
     });
   }
 
-  void _updatePreviewOrder(LoyaltyCard draggedCard, int targetIndex) {
-    setState(() {
-      final draggedIndex = filteredCards.indexWhere((c) =>
-        c.shopName == draggedCard.shopName && c.cardNumber == draggedCard.cardNumber);
 
-      if (draggedIndex != -1) {
-        displayCards = List.from(filteredCards);
-        final card = displayCards.removeAt(draggedIndex);
-        displayCards.insert(targetIndex, card);
-        draggingCard = draggedCard;
-        hoverIndex = targetIndex;
-      }
-    });
-  }
-
-  void _resetPreview() {
-    _previewTimer?.cancel();
-    _previewTimer = null;
-    setState(() {
-      displayCards = List.from(filteredCards);
-      draggingCard = null;
-      hoverIndex = null;
-    });
-  }
-
-  void _startPreviewTimer(LoyaltyCard draggedCard, int targetIndex) {
-    _previewTimer?.cancel();
-    _previewTimer = Timer(const Duration(milliseconds: 150), () {
-      _updatePreviewOrder(draggedCard, targetIndex);
-    });
-  }
-
-  void closeModal() {
-    setState(() {
-      selectedCard = null;
-    });
-  }
 
   void _showCardDetail(LoyaltyCard card, int index) {
-    setState(() {
-      selectedCard = card;
-    });
+    widget.onCardTap?.call(card);
   }
 
   Future<void> _addCard(BuildContext context) async {
@@ -170,15 +130,14 @@ class _CardsScreenState extends State<CardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final cardProvider = context.watch<CardProvider>();
     _syncWithProvider(cardProvider.cards);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: Stack(
-          children: [
-            Column(
+        child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -274,129 +233,8 @@ class _CardsScreenState extends State<CardsScreen> {
                   ),
                 ),
               ],
-            ),
-            CardDetailModal(
-              card: selectedCard,
-              onClose: closeModal,
-              onRefreshCards: () => cardProvider.loadCards(),
-              onModalStateChanged: widget.onModalStateChanged,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-                              _resetPreview();
-                            },
-                            builder: (context, candidateData, rejectedData) {
-                              final isHovering = candidateData.isNotEmpty;
-                              return AnimatedScale(
-                                scale: isHovering ? 0.97 : 1.0,
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeInOut,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeInOut,
-                                  transform: isHovering ? Matrix4.translationValues(0, -5, 0) : Matrix4.identity(),
-                                  child: LongPressDraggable<LoyaltyCard>(
-                                data: card,
-                                feedback: Material(
-                                  elevation: 8,
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    width: 150,
-                                    height: 125,
-                                    decoration: BoxDecoration(
-                                      color: ColorUtils.hexToColor(card.color),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Opacity(
-                                      opacity: 0.9,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              card.shopName,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 2,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              card.cardNumber,
-                                              style: const TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 11,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                childWhenDragging: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                                      width: 2,
-                                      style: BorderStyle.solid,
-                                    ),
-                                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.drag_indicator,
-                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                                      size: 32,
-                                    ),
-                                  ),
-                                ),
-                                child: GestureDetector(
-                                  onTap: () => _showCardDetail(card, index),
-                                  child: Hero(
-                                    tag: 'card_${card.shopName}_${card.cardNumber}',
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: card_widget.LoyaltyCard(
-                                        shopName: card.shopName,
-                                        description: card.description ?? '',
-                                        cardNumber: card.cardNumber,
-                                        cardColor: ColorUtils.hexToColor(card.color),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                   ),
-                                 ),
-                              );
-                            },
-                            ),
-                          );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              CardDetailModal(
-                card: selectedCard,
-                onClose: closeModal,
-                onRefreshCards: () => cardProvider.loadCards(),
-                onModalStateChanged: widget.onModalStateChanged,
-              ),
-            ],
           ),
-        ),
+      ),
       );
   }
 }
