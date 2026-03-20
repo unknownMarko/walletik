@@ -26,11 +26,6 @@ class CardRepositoryImpl implements CardRepository {
   }
 
   @override
-  Future<void> toggleFavorite(LoyaltyCard card) async {
-    await CardStorage.toggleFavorite(card);
-  }
-
-  @override
   Future<void> updateLastUsed(LoyaltyCard card) async {
     await CardStorage.updateLastUsed(card);
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/loyalty_card.dart';
 import '../repositories/card_repository.dart';
+import '../services/card_storage.dart';
 
 /// Provider for managing loyalty card state.
 /// Exposes loading/error states and card operations to the UI.
@@ -9,7 +10,7 @@ class CardProvider extends ChangeNotifier {
 
   List<LoyaltyCard> _cards = [];
   List<LoyaltyCard> _recentCards = [];
-  List<LoyaltyCard> _favoriteCards = [];
+  List<String?> _quickAccessKeys = [null, null, null];
   bool _isLoading = false;
   String? _error;
 
@@ -25,12 +26,16 @@ class CardProvider extends ChangeNotifier {
   /// Get recent cards (first 3) — cached
   List<LoyaltyCard> get recentCards => _recentCards;
 
-  /// Get favorite cards (first 3) — cached
-  List<LoyaltyCard> get favoriteCards => _favoriteCards;
+  /// Quick access cards (3 slots)
+  LoyaltyCard? get primaryCard =>
+      CardStorage.findCardByKey(_cards, _quickAccessKeys[0]);
+  LoyaltyCard? get secondaryCard =>
+      CardStorage.findCardByKey(_cards, _quickAccessKeys[1]);
+  LoyaltyCard? get thirdCard =>
+      CardStorage.findCardByKey(_cards, _quickAccessKeys[2]);
 
   void _updateDerivedLists() {
     _recentCards = _cards.take(3).toList();
-    _favoriteCards = _cards.where((card) => card.isFavorite).take(3).toList();
   }
 
   /// Load all cards from repository
@@ -41,11 +46,24 @@ class CardProvider extends ChangeNotifier {
 
     try {
       _cards = await _repository.loadCards();
+      _quickAccessKeys = await CardStorage.loadQuickAccessKeys();
       _updateDerivedLists();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Set a quick access card slot (0=primary, 1=secondary, 2=third)
+  Future<void> setQuickAccessCard(int slot, LoyaltyCard? card) async {
+    try {
+      await CardStorage.setQuickAccessSlot(slot, card);
+      _quickAccessKeys = await CardStorage.loadQuickAccessKeys();
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
       notifyListeners();
     }
   }
@@ -76,17 +94,6 @@ class CardProvider extends ChangeNotifier {
   Future<void> deleteCard(LoyaltyCard card) async {
     try {
       await _repository.deleteCard(card);
-      await loadCards();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  /// Toggle favorite status
-  Future<void> toggleFavorite(LoyaltyCard card) async {
-    try {
-      await _repository.toggleFavorite(card);
       await loadCards();
     } catch (e) {
       _error = e.toString();

@@ -67,16 +67,46 @@ class CardStorage {
     }
   }
 
-  static Future<void> toggleFavorite(LoyaltyCard card) async {
-    final cards = await loadCards();
-    final index = cards.indexWhere((c) =>
-      c.shopName == card.shopName &&
-      c.cardNumber == card.cardNumber
-    );
+  // Quick Access Cards (3 slots: primary, secondary, third)
+  static const String _quickAccessKey = 'quick_access_cards';
 
-    if (index != -1) {
-      cards[index] = cards[index].copyWith(isFavorite: !card.isFavorite);
-      await saveCards(cards);
+  static String _cardKey(LoyaltyCard card) =>
+      '${card.shopName}::${card.cardNumber}';
+
+  static Future<List<String?>> loadQuickAccessKeys() async {
+    final prefs = await _instance;
+    final stored = prefs.getString(_quickAccessKey);
+    if (stored == null) return [null, null, null];
+
+    try {
+      final list = json.decode(stored) as List<dynamic>;
+      return List.generate(3, (i) => i < list.length ? list[i] as String? : null);
+    } catch (_) {
+      return [null, null, null];
+    }
+  }
+
+  static Future<void> saveQuickAccessKeys(List<String?> keys) async {
+    final prefs = await _instance;
+    await prefs.setString(_quickAccessKey, json.encode(keys));
+  }
+
+  static Future<void> setQuickAccessSlot(int slot, LoyaltyCard? card) async {
+    final keys = await loadQuickAccessKeys();
+    keys[slot] = card != null ? _cardKey(card) : null;
+    await saveQuickAccessKeys(keys);
+  }
+
+  static LoyaltyCard? findCardByKey(List<LoyaltyCard> cards, String? key) {
+    if (key == null) return null;
+    final parts = key.split('::');
+    if (parts.length != 2) return null;
+    try {
+      return cards.firstWhere(
+        (c) => c.shopName == parts[0] && c.cardNumber == parts[1],
+      );
+    } catch (_) {
+      return null;
     }
   }
 

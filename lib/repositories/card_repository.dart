@@ -15,9 +15,6 @@ abstract class CardRepository {
   /// Delete a card
   Future<void> deleteCard(LoyaltyCard card);
 
-  /// Toggle favorite status
-  Future<void> toggleFavorite(LoyaltyCard card);
-
   /// Update last used timestamp
   Future<void> updateLastUsed(LoyaltyCard card);
 
