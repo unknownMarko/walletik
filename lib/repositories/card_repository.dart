@@ -23,7 +23,4 @@ abstract class CardRepository {
 
   /// Reorder cards (save new order)
   Future<void> reorderCards(List<LoyaltyCard> cards);
-
-  /// Sync pending offline operations
-  Future<void> syncPendingOperations();
 }

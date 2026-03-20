@@ -39,9 +39,4 @@ class CardRepositoryImpl implements CardRepository {
   Future<void> reorderCards(List<LoyaltyCard> cards) async {
     await CardStorage.saveCards(cards);
   }
-
-  @override
-  Future<void> syncPendingOperations() async {
-    await CardStorage.processPendingSync();
-  }
 }

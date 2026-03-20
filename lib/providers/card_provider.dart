@@ -115,17 +115,6 @@ class CardProvider extends ChangeNotifier {
     }
   }
 
-  /// Sync pending offline operations
-  Future<void> syncPendingOperations() async {
-    try {
-      await _repository.syncPendingOperations();
-      // Don't call loadCards() - initial load already has data
-      // and processPendingSync handles reloading if needed
-    } catch (e) {
-      debugPrint('CardProvider.syncPendingOperations error: $e');
-    }
-  }
-
   /// Clear error state
   void clearError() {
     _error = null;
