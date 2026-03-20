@@ -92,8 +92,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: SafeArea(
-          child: ListView(
+        child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _buildUserCard(),
@@ -120,7 +119,6 @@ class SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

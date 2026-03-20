@@ -61,9 +61,28 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool _isModalOpen = false;
   bool _isNavigating = false;
   int? _targetIndex;
+  late List<Widget> _screens;
 
   late AnimationController _navBarAnimationController;
   late Animation<double> _navBarAnimation;
+
+  void _navigateToPage(int index) {
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.ease,
+    );
+  }
+
+  void _onModalStateChanged(bool isOpen) {
+    setState(() => _isModalOpen = isOpen);
+    if (isOpen) {
+      _navBarAnimationController.forward();
+    } else {
+      _navBarAnimationController.reverse();
+    }
+  }
 
   @override
   void initState() {
@@ -79,6 +98,18 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       parent: _navBarAnimationController,
       curve: Curves.easeInOut,
     ));
+
+    _screens = [
+      HomeScreen(
+        onNavigateToCards: _navigateToPage,
+        onModalStateChanged: _onModalStateChanged,
+      ),
+      CardsScreen(
+        onModalStateChanged: _onModalStateChanged,
+      ),
+      const ShoppingListScreen(),
+      const SettingsScreen(),
+    ];
   }
 
   @override
@@ -88,46 +119,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  List<Widget> get _screens => [
-    HomeScreen(
-      onNavigateToCards: (index) {
-        setState(() => _currentIndex = index);
-        _pageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.ease,
-        );
-      },
-      onModalStateChanged: (isOpen) {
-        setState(() => _isModalOpen = isOpen);
-        if (isOpen) {
-          _navBarAnimationController.forward();
-        } else {
-          _navBarAnimationController.reverse();
-        }
-      },
-    ),
-    CardsScreen(
-      onModalStateChanged: (isOpen) {
-        setState(() => _isModalOpen = isOpen);
-        if (isOpen) {
-          _navBarAnimationController.forward();
-        } else {
-          _navBarAnimationController.reverse();
-        }
-      },
-    ),
-    const ShoppingListScreen(),
-    const SettingsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: Theme.of(context).colorScheme.surface,
-      ),
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: SafeArea(
           top: true,
@@ -163,8 +157,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 child: Opacity(
                   opacity: _navBarAnimation.value,
                   child: BottomNavigationBar(
+                    type: BottomNavigationBarType.fixed,
                     backgroundColor: Theme.of(context).colorScheme.surface,
+                    elevation: 0,
                     currentIndex: _currentIndex,
+                    selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+                    unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
                     selectedIconTheme: const IconThemeData(size: 28),
                     unselectedIconTheme: const IconThemeData(size: 24),
                     onTap: _isModalOpen ? null : (index) {
@@ -198,7 +196,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }

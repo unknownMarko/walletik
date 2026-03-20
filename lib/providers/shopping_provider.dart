@@ -7,6 +7,8 @@ class ShoppingProvider extends ChangeNotifier {
   final ShoppingRepository _repository;
 
   List<ShoppingItem> _items = [];
+  List<ShoppingItem> _pendingItems = [];
+  List<ShoppingItem> _completedItems = [];
   bool _isLoading = false;
   String? _error;
 
@@ -19,13 +21,16 @@ class ShoppingProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Get pending (not completed) items
-  List<ShoppingItem> get pendingItems =>
-      _items.where((item) => !item.isCompleted).toList();
+  /// Get pending (not completed) items — cached
+  List<ShoppingItem> get pendingItems => _pendingItems;
 
-  /// Get completed items
-  List<ShoppingItem> get completedItems =>
-      _items.where((item) => item.isCompleted).toList();
+  /// Get completed items — cached
+  List<ShoppingItem> get completedItems => _completedItems;
+
+  void _updateDerivedLists() {
+    _pendingItems = _items.where((item) => !item.isCompleted).toList();
+    _completedItems = _items.where((item) => item.isCompleted).toList();
+  }
 
   /// Load all items from repository
   Future<void> loadItems() async {
@@ -35,9 +40,9 @@ class ShoppingProvider extends ChangeNotifier {
 
     try {
       _items = await _repository.loadItems();
+      _updateDerivedLists();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.loadItems error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -51,7 +56,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.addItem error: $e');
       notifyListeners();
     }
   }
@@ -63,7 +67,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.updateItem error: $e');
       notifyListeners();
     }
   }
@@ -75,7 +78,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.deleteItem error: $e');
       notifyListeners();
     }
   }
@@ -87,7 +89,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.toggleCompletion error: $e');
       notifyListeners();
     }
   }
@@ -96,11 +97,11 @@ class ShoppingProvider extends ChangeNotifier {
   Future<void> reorderItems(List<ShoppingItem> items) async {
     try {
       _items = items;
+      _updateDerivedLists();
       notifyListeners();
       await _repository.reorderItems(items);
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.reorderItems error: $e');
       await loadItems(); // Reload on error
     }
   }
@@ -112,7 +113,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.clearCompleted error: $e');
       notifyListeners();
     }
   }
@@ -124,7 +124,6 @@ class ShoppingProvider extends ChangeNotifier {
       await loadItems();
     } catch (e) {
       _error = e.toString();
-      debugPrint('ShoppingProvider.clearAll error: $e');
       notifyListeners();
     }
   }

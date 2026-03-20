@@ -139,8 +139,7 @@ class _CardsScreenState extends State<CardsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: SafeArea(
-          child: Stack(
+        child: Stack(
             children: [
               Column(
                 children: [
@@ -379,7 +378,6 @@ class _CardsScreenState extends State<CardsScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

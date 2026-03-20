@@ -6,7 +6,6 @@ import '../widgets/card_detail_modal.dart';
 import '../models/loyalty_card.dart';
 import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
-import 'add_card_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToCards;
@@ -35,146 +34,6 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedCard = card;
     });
-  }
-
-  Widget _buildStatsCard(int cardCount) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.wallet,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Cards',
-                  style: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$cardCount',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddCardScreen(),
-                      ),
-                    );
-
-                    if (result != null && result is Map<String, dynamic>) {
-                      final newCard = LoyaltyCard(
-                        shopName: result['name'] as String,
-                        description: result['description'] as String?,
-                        cardNumber: result['code'] as String,
-                        color: (result['color'] as String?) ?? '#0066CC',
-                        barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
-                        category: (result['category'] as String?) ?? 'Other',
-                        isFavorite: (result['isFavorite'] as bool?) ?? false,
-                        createdAt: DateTime.now(),
-                        lastUsed: DateTime.now(),
-                      );
-
-                      if (mounted) {
-                        await context.read<CardProvider>().addCard(newCard);
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Card'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => widget.onNavigateToCards?.call(1),
-                  icon: const Icon(Icons.view_list),
-                  label: const Text('View All'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildFavoriteCards(List<LoyaltyCard> favoriteCards) {
@@ -215,6 +74,7 @@ class HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final card = favoriteCards[index];
                 return Container(
+                  key: ValueKey('fav_${card.shopName}_${card.cardNumber}'),
                   width: 200,
                   margin: EdgeInsets.only(
                     right: index < favoriteCards.length - 1 ? 12 : 0,
@@ -222,7 +82,7 @@ class HomeScreenState extends State<HomeScreen> {
                   child: GestureDetector(
                     onTap: () => _showCardDetail(card, index),
                     child: Hero(
-                      tag: 'card_${card.shopName}_${card.cardNumber}',
+                      tag: 'fav_card_${card.shopName}_${card.cardNumber}',
                       child: Material(
                         color: Colors.transparent,
                         child: card_widget.LoyaltyCard(
@@ -282,6 +142,7 @@ class HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final card = recentCards[index];
                 return Container(
+                  key: ValueKey('recent_${card.shopName}_${card.cardNumber}'),
                   width: 200,
                   margin: EdgeInsets.only(
                     right: index < recentCards.length - 1 ? 12 : 0,
@@ -289,7 +150,7 @@ class HomeScreenState extends State<HomeScreen> {
                   child: GestureDetector(
                     onTap: () => _showCardDetail(card, index),
                     child: Hero(
-                      tag: 'card_${card.shopName}_${card.cardNumber}',
+                      tag: 'recent_card_${card.shopName}_${card.cardNumber}',
                       child: Material(
                         color: Colors.transparent,
                         child: card_widget.LoyaltyCard(
@@ -322,10 +183,9 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: BackgroundLogo(
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Column(
+        child: Stack(
+          children: [
+            Column(
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
@@ -357,9 +217,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                         fontSize: 36,
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                     ),
                                   ],
@@ -373,10 +231,6 @@ class HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          _buildStatsCard(cards.length),
-                          const SizedBox(height: 24),
-                          _buildQuickActions(),
                           const SizedBox(height: 24),
                           _buildFavoriteCards(favoriteCards),
                           if (favoriteCards.isNotEmpty)
@@ -398,7 +252,6 @@ class HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
