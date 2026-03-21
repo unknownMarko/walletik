@@ -33,24 +33,13 @@ class LoyaltyCard extends StatelessWidget {
           ],
           stops: const [0.0, 0.5, 1.0],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 0.6, sigmaY: 0.6),
-                child: CustomPaint(painter: _GrainPainter()),
-              ),
-            ),
+            const GrainOverlay(),
             Positioned(
               top: -20,
               left: -20,
@@ -109,6 +98,27 @@ class LoyaltyCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Reusable grain overlay widget.
+class GrainOverlay extends StatelessWidget {
+  final double opacity;
+  const GrainOverlay({super.key, this.opacity = 0.5});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: opacity,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 0.6, sigmaY: 0.6),
+            child: CustomPaint(painter: _GrainPainter()),
+          ),
         ),
       ),
     );
