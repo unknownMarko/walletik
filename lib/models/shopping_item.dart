@@ -70,11 +70,17 @@ class ShoppingItem {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ShoppingItem && other.id == id;
+    return other is ShoppingItem &&
+        other.id == id &&
+        other.name == name &&
+        other.quantity == quantity &&
+        other.category == category &&
+        other.notes == notes &&
+        other.isCompleted == isCompleted;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(id, name, quantity, category, notes, isCompleted);
 
   @override
   String toString() {

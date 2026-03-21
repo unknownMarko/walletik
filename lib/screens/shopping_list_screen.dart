@@ -18,7 +18,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   bool get wantKeepAlive => true;
 
   final _quickAddController = TextEditingController();
-  int _quickAddQuantity = 1;
 
   @override
   void dispose() {
@@ -65,13 +64,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
     final item = ShoppingItem(
       id: '',
       name: name,
-      quantity: _quickAddQuantity,
+      quantity: 1,
       category: 'Groceries',
       createdAt: DateTime.now(),
     );
     await provider.addItem(item);
     _quickAddController.clear();
-    setState(() => _quickAddQuantity = 1);
   }
 
   Future<void> _showEditDialog(ShoppingProvider provider, ShoppingItem item) async {
@@ -228,64 +226,88 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                           final item = allItems[index];
                           final isCompleted = item.isCompleted;
 
-                          return Dismissible(
+                          return Padding(
                             key: Key(item.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.delete,
-                                color: Colors.white,
-                              ),
-                            ),
-                            onDismissed: (direction) => _deleteItem(item, context.read<ShoppingProvider>()),
-                            child: GestureDetector(
-                              onTap: () => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
-                              onLongPress: () => _showEditDialog(context.read<ShoppingProvider>(), item),
-                              child: Container(
-                                height: 48,
-                                margin: const EdgeInsets.symmetric(vertical: 3),
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: isCompleted
-                                      ? (isDarkTheme
-                                          ? Colors.white.withValues(alpha: 0.05)
-                                          : Colors.black.withValues(alpha: 0.05))
-                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Dismissible(
+                                key: Key('dismiss_${item.id}'),
+                                direction: DismissDirection.horizontal,
+                                background: Container(
+                                  alignment: Alignment.centerLeft,
+                                  padding: const EdgeInsets.only(left: 12),
+                                  color: Theme.of(context).colorScheme.primary,
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                          color: isCompleted
-                                              ? (isDarkTheme ? Colors.white54 : Colors.black38)
-                                              : Theme.of(context).colorScheme.onSurface,
+                                secondaryBackground: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 12),
+                                  color: Colors.red,
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  if (direction == DismissDirection.startToEnd) {
+                                    _showEditDialog(context.read<ShoppingProvider>(), item);
+                                    return false;
+                                  }
+                                  return true;
+                                },
+                                onDismissed: (direction) => _deleteItem(item, context.read<ShoppingProvider>()),
+                                child: GestureDetector(
+                                  onTap: () => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        height: 48,
+                                        width: 44,
+                                        color: isCompleted
+                                            ? (isDarkTheme
+                                                ? Colors.white.withValues(alpha: 0.05)
+                                                : Colors.black.withValues(alpha: 0.05))
+                                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.check_rounded,
+                                            size: 22,
+                                            color: isCompleted
+                                                ? Theme.of(context).colorScheme.primary
+                                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                          ),
                                         ),
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: Checkbox(
-                                        value: isCompleted,
-                                        onChanged: (_) => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
-                                        activeColor: Theme.of(context).colorScheme.primary,
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Container(
+                                          height: 48,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                          color: isCompleted
+                                              ? (isDarkTheme
+                                                  ? Colors.white.withValues(alpha: 0.05)
+                                                  : Colors.black.withValues(alpha: 0.05))
+                                              : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                              color: isCompleted
+                                                  ? (isDarkTheme ? Colors.white54 : Colors.black38)
+                                                  : Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -314,27 +336,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                               borderSide: BorderSide.none,
                             ),
                             contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                            suffixIcon: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _quickAddQuantity = _quickAddQuantity >= 9 ? 1 : _quickAddQuantity + 1;
-                                });
-                              },
-                              child: Container(
-                                width: 36,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${_quickAddQuantity}x',
-                                  style: TextStyle(
-                                    color: _quickAddQuantity > 1
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ),
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
@@ -343,10 +344,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: () => _quickAdd(context.read<ShoppingProvider>()),
+                      onTap: allItems.any((i) => i.isCompleted)
+                          ? () => context.read<ShoppingProvider>().clearCompleted()
+                          : null,
                       child: Container(
                         height: 48,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: const BorderRadius.only(
@@ -354,22 +357,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                             bottomRight: Radius.circular(12),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.add,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Add',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        child: Icon(
+                          Icons.cleaning_services_rounded,
+                          size: 20,
+                          color: allItems.any((i) => i.isCompleted)
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                       ),
                     ),
