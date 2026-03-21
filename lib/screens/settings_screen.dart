@@ -149,6 +149,83 @@ class SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  void _showThemePicker(BuildContext context, ThemeProvider themeProvider) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final themes = [
+      (AppTheme.light, 'Light', Icons.light_mode, Colors.white),
+      (AppTheme.dark, 'Dark', Icons.dark_mode, const Color(0xFF121212)),
+      (AppTheme.oled, 'Dark (OLED)', Icons.brightness_1, Colors.black),
+      (AppTheme.purple, 'Dark Purple', Icons.color_lens, const Color(0xFF1e0a3c)),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Choose theme',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...themes.map((t) {
+                final (theme, name, icon, previewColor) = t;
+                final isSelected = themeProvider.theme == theme;
+                return ListTile(
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: previewColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.2),
+                        width: isSelected ? 2.5 : 1,
+                      ),
+                    ),
+                    child: Icon(icon, size: 18, color: previewColor.computeLuminance() > 0.5 ? Colors.black54 : Colors.white70),
+                  ),
+                  title: Text(
+                    name,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                  trailing: isSelected ? Icon(Icons.check, color: colorScheme.primary) : null,
+                  onTap: () {
+                    themeProvider.setTheme(theme);
+                    Navigator.pop(sheetContext);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showCardPicker(BuildContext context, CardProvider cardProvider, int slot) {
     final colorScheme = Theme.of(context).colorScheme;
     final currentCards = [
@@ -258,12 +335,9 @@ class SettingsScreenState extends State<SettingsScreen>
                 builder: (context, themeProvider, child) {
                   return ListTile(
                     leading: const Icon(Icons.palette),
-                    title: const Text('Theme Color'),
+                    title: const Text('Theme'),
                     subtitle: Text(themeProvider.themeName),
-                    trailing: Switch(
-                      value: themeProvider.isDarkTheme,
-                      onChanged: (val) => themeProvider.toggleTheme(),
-                    ),
+                    onTap: () => _showThemePicker(context, themeProvider),
                   );
                 },
               ),
