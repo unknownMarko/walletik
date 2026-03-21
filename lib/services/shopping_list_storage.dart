@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/shopping_item.dart';
 
@@ -23,7 +24,8 @@ class ShoppingListStorage {
       return decoded
           .map((item) => ShoppingItem.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ShoppingListStorage.loadItems error: $e');
       return [];
     }
   }

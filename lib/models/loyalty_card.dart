@@ -76,14 +76,18 @@ class LoyaltyCard {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is LoyaltyCard &&
-        other.id == id &&
+    if (other is! LoyaltyCard) return false;
+    // Both have id → compare by id only
+    if (id != null && other.id != null) return id == other.id;
+    // Fallback for cards without id (backward compat with old saved data)
+    return other.id == id &&
         other.shopName == shopName &&
         other.cardNumber == cardNumber;
   }
 
   @override
-  int get hashCode => Object.hash(id, shopName, cardNumber);
+  int get hashCode =>
+      id != null ? id.hashCode : Object.hash(shopName, cardNumber);
 
   @override
   String toString() {
