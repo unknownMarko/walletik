@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/loyalty_card.dart';
 
@@ -23,7 +24,8 @@ class CardStorage {
       return cardsList
           .map((c) => LoyaltyCard.fromJson(c as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CardStorage.loadCards error: $e');
       return [];
     }
   }
@@ -35,17 +37,20 @@ class CardStorage {
   }
 
   static Future<void> addCard(LoyaltyCard card) async {
+    final cardToSave = card.id == null
+        ? card.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString())
+        : card;
     final cards = await loadCards();
-    cards.add(card);
+    cards.add(cardToSave);
     await saveCards(cards);
   }
 
   static Future<void> removeCard(LoyaltyCard cardToRemove) async {
     final cards = await loadCards();
-    cards.removeWhere((card) =>
-      card.shopName == cardToRemove.shopName &&
-      card.cardNumber == cardToRemove.cardNumber
-    );
+    cards.removeWhere((card) => cardToRemove.id != null
+        ? card.id == cardToRemove.id
+        : card.shopName == cardToRemove.shopName &&
+            card.cardNumber == cardToRemove.cardNumber);
     await saveCards(cards);
   }
 
@@ -56,10 +61,10 @@ class CardStorage {
     );
 
     final cards = await loadCards();
-    final index = cards.indexWhere((card) =>
-      card.shopName == oldCard.shopName &&
-      card.cardNumber == oldCard.cardNumber
-    );
+    final index = cards.indexWhere((card) => oldCard.id != null
+        ? card.id == oldCard.id
+        : card.shopName == oldCard.shopName &&
+            card.cardNumber == oldCard.cardNumber);
 
     if (index != -1) {
       cards[index] = cardToSave;
@@ -71,7 +76,7 @@ class CardStorage {
   static const String _quickAccessKey = 'quick_access_cards';
 
   static String _cardKey(LoyaltyCard card) =>
-      '${card.shopName}::${card.cardNumber}';
+      card.id ?? '${card.shopName}::${card.cardNumber}';
 
   static Future<List<String?>> loadQuickAccessKeys() async {
     final prefs = await _instance;
@@ -81,7 +86,8 @@ class CardStorage {
     try {
       final list = json.decode(stored) as List<dynamic>;
       return List.generate(3, (i) => i < list.length ? list[i] as String? : null);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CardStorage.loadQuickAccessKeys error: $e');
       return [null, null, null];
     }
   }
@@ -99,23 +105,29 @@ class CardStorage {
 
   static LoyaltyCard? findCardByKey(List<LoyaltyCard> cards, String? key) {
     if (key == null) return null;
-    final parts = key.split('::');
-    if (parts.length != 2) return null;
+    // Try id-based match first (new format)
     try {
-      return cards.firstWhere(
-        (c) => c.shopName == parts[0] && c.cardNumber == parts[1],
-      );
+      return cards.firstWhere((c) => c.id == key);
     } catch (_) {
-      return null;
+      // Fallback: composite key shopName::cardNumber (backward compat)
+      final parts = key.split('::');
+      if (parts.length != 2) return null;
+      try {
+        return cards.firstWhere(
+          (c) => c.shopName == parts[0] && c.cardNumber == parts[1],
+        );
+      } catch (_) {
+        return null;
+      }
     }
   }
 
   static Future<void> updateLastUsed(LoyaltyCard card) async {
     final cards = await loadCards();
-    final index = cards.indexWhere((c) =>
-      c.shopName == card.shopName &&
-      c.cardNumber == card.cardNumber
-    );
+    final index = cards.indexWhere((c) => card.id != null
+        ? c.id == card.id
+        : c.shopName == card.shopName &&
+            c.cardNumber == card.cardNumber);
 
     if (index != -1) {
       cards[index] = cards[index].copyWith(lastUsed: DateTime.now());

@@ -146,7 +146,22 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final allItems = context.select<ShoppingProvider, List<ShoppingItem>>((p) => p.items);
+    final shoppingError = context.select<ShoppingProvider, String?>((p) => p.error);
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+
+    if (shoppingError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<ShoppingProvider>().clearError();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(shoppingError),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      });
+    }
 
     return BackgroundLogo(
       child: Column(

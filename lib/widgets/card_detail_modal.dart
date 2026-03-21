@@ -219,6 +219,7 @@ class _CardDetailModalState extends State<CardDetailModal>
             );
             if (result != null && result is Map<String, dynamic>) {
               final updatedCard = LoyaltyCard(
+                id: card.id,
                 shopName: result['name'] as String,
                 description: result['description'] as String?,
                 cardNumber: result['code'] as String,

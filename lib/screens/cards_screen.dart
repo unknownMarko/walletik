@@ -23,26 +23,13 @@ class _CardsScreenState extends State<CardsScreen>
   bool get wantKeepAlive => true;
 
   final TextEditingController _searchController = TextEditingController();
-  List<LoyaltyCard> filteredCards = [];
-  List<LoyaltyCard> displayCards = [];
-  List<LoyaltyCard> _lastProviderCards = [];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterCards);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final cards = context.read<CardProvider>().cards;
-    if (cards != _lastProviderCards) {
-      _lastProviderCards = cards;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _filterCards();
-      });
-    }
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -51,52 +38,25 @@ class _CardsScreenState extends State<CardsScreen>
     super.dispose();
   }
 
-  Future<void> _onCardReorder(int fromIndex, int toIndex, CardProvider provider) async {
-    final allCards = List<LoyaltyCard>.from(provider.cards);
-    final card = filteredCards.removeAt(fromIndex);
-    filteredCards.insert(toIndex, card);
-
-    final cardIndex = allCards.indexWhere((c) =>
-      c.shopName == card.shopName && c.cardNumber == card.cardNumber);
-    if (cardIndex != -1) {
-      allCards.removeAt(cardIndex);
-      allCards.insert(toIndex.clamp(0, allCards.length), card);
-    }
-
-    setState(() {
-      displayCards = List.from(filteredCards);
-    });
-
-    await provider.reorderCards(allCards);
-  }
-
-  void _filterCards() {
-    final allCards = _lastProviderCards;
+  List<LoyaltyCard> _filterCards(List<LoyaltyCard> allCards) {
     final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        filteredCards = List.from(allCards);
-      } else {
-        filteredCards = allCards.where((card) {
-          final shopName = card.shopName.toLowerCase();
-          final description = (card.description ?? '').toLowerCase();
-          final cardNumber = card.cardNumber.toLowerCase();
-          return shopName.contains(query) ||
-              description.contains(query) ||
-              cardNumber.contains(query);
-        }).toList();
-      }
-      displayCards = List.from(filteredCards);
-    });
+    if (query.isEmpty) return allCards;
+    return allCards.where((card) {
+      final shopName = card.shopName.toLowerCase();
+      final description = (card.description ?? '').toLowerCase();
+      final cardNumber = card.cardNumber.toLowerCase();
+      return shopName.contains(query) ||
+          description.contains(query) ||
+          cardNumber.contains(query);
+    }).toList();
   }
-
-
 
   void _showCardDetail(LoyaltyCard card, int index) {
     widget.onCardTap?.call(card);
   }
 
   Future<void> _addCard(BuildContext context) async {
+    final cardProvider = context.read<CardProvider>();
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -104,7 +64,7 @@ class _CardsScreenState extends State<CardsScreen>
       ),
     );
 
-    if (result != null && result is Map<String, dynamic>) {
+    if (result != null && result is Map<String, dynamic> && mounted) {
       final newCard = LoyaltyCard(
         shopName: result['name'] as String,
         description: result['description'] as String?,
@@ -115,9 +75,7 @@ class _CardsScreenState extends State<CardsScreen>
         lastUsed: DateTime.now(),
       );
 
-      if (mounted) {
-        await context.read<CardProvider>().addCard(newCard);
-      }
+      await cardProvider.addCard(newCard);
     }
   }
 
@@ -136,7 +94,25 @@ class _CardsScreenState extends State<CardsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    context.select<CardProvider, List<LoyaltyCard>>((p) => p.cards);
+    final provider = context.watch<CardProvider>();
+    final allCards = provider.cards;
+    final displayCards = _filterCards(allCards);
+
+    // Fix #5: Error SnackBar
+    final cardError = provider.error;
+    if (cardError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<CardProvider>().clearError();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(cardError),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      });
+    }
 
     return BackgroundLogo(
       child: Column(

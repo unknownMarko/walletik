@@ -20,7 +20,19 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController numberController = TextEditingController();
   String barcodeFormat = 'code128';
   String selectedColor = '#0066CC';
+  String? _cachedBarcodeSvg;
+  String? _cachedBarcodeKey;
   bool get isEditMode => widget.editCard != null;
+
+  String? _getBarcodeSvg(String code, String format) {
+    if (code.isEmpty) return null;
+    final key = '${code}_$format';
+    if (_cachedBarcodeKey != key) {
+      _cachedBarcodeKey = key;
+      _cachedBarcodeSvg = BarcodeUtils.generate(code, format);
+    }
+    return _cachedBarcodeSvg;
+  }
 
   @override
   void initState() {
@@ -107,8 +119,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final code = numberController.text;
-    final svgCode = code.isNotEmpty ? BarcodeUtils.generate(code, barcodeFormat) : null;
+    final svgCode = _getBarcodeSvg(numberController.text, barcodeFormat);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,

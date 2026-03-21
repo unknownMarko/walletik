@@ -358,6 +358,21 @@ class HomeScreenState extends State<HomeScreen>
     final primaryCard = context.select<CardProvider, LoyaltyCard?>((p) => p.primaryCard);
     final secondaryCard = context.select<CardProvider, LoyaltyCard?>((p) => p.secondaryCard);
     final thirdCard = context.select<CardProvider, LoyaltyCard?>((p) => p.thirdCard);
+    final cardError = context.select<CardProvider, String?>((p) => p.error);
+
+    if (cardError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<CardProvider>().clearError();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(cardError),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      });
+    }
 
     return BackgroundLogo(
       child: SingleChildScrollView(
