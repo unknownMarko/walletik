@@ -6,6 +6,7 @@ import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 import '../utils/barcode_utils.dart';
 import '../screens/add_card_screen.dart';
+import 'loyalty_card.dart' show GrainOverlay;
 
 class CardDetailModal extends StatefulWidget {
   final LoyaltyCard? card;
@@ -158,33 +159,58 @@ class _CardDetailModalState extends State<CardDetailModal>
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: _cachedCardColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, 0.3),
-              blurRadius: 6,
-              offset: Offset(0, 10),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.lerp(_cachedCardColor, Colors.white, 0.08)!,
+              _cachedCardColor!,
+              Color.lerp(_cachedCardColor, Colors.black, 0.15)!,
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          
+        ),
+        child: Stack(
+          children: [
+            const GrainOverlay(),
+            Positioned(
+              top: -20,
+              left: -20,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.08),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(card),
+                    Divider(
+                      height: 16,
+                      thickness: 1,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    _buildBarcode(card),
+                  ],
+                ),
+              ),
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(card),
-                Divider(
-                  height: 16,
-                  thickness: 1,
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
-                _buildBarcode(card),
-              ],
-            ),
-          ),
         ),
       ),
       ),

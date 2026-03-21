@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/background_logo.dart';
+import '../widgets/loyalty_card.dart' show GrainOverlay;
 import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../models/shopping_item.dart';
@@ -364,7 +365,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                 onDismissed: (direction) => _deleteItem(item, context.read<ShoppingProvider>()),
                                 child: GestureDetector(
                                   onTap: () => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
-                                  child: Row(
+                                  child: Stack(
+                                    children: [
+                                      Row(
                                     children: [
                                       Container(
                                         height: 48,
@@ -410,6 +413,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                       ),
                                     ],
                                   ),
+                                      const GrainOverlay(),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -422,25 +428,40 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                 child: Row(
                   children: [
                     Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: TextField(
-                          controller: _quickAddController,
-                          decoration: InputDecoration(
-                            hintText: 'Add item...',
-                            filled: true,
-                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            border: OutlineInputBorder(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(12),
-                                bottomLeft: Radius.circular(12),
-                              ),
-                              borderSide: BorderSide.none,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                        ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 48,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                          ),
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
+                            const GrainOverlay(),
+                            SizedBox(
+                              height: 48,
+                              child: TextField(
+                                controller: _quickAddController,
+                                decoration: InputDecoration(
+                                  hintText: 'Add item...',
+                                  filled: true,
+                                  fillColor: Colors.transparent,
+                                  border: OutlineInputBorder(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(12),
+                                      bottomLeft: Radius.circular(12),
+                                    ),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                                ),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -449,22 +470,27 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                       onTap: allItems.any((i) => i.isCompleted)
                           ? () => context.read<ShoppingProvider>().clearCompleted()
                           : null,
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.cleaning_services_rounded,
-                          size: 20,
-                          color: allItems.any((i) => i.isCompleted)
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.cleaning_services_rounded,
+                                size: 20,
+                                color: allItems.any((i) => i.isCompleted)
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            const GrainOverlay(),
+                          ],
                         ),
                       ),
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/background_logo.dart';
+import '../widgets/loyalty_card.dart' show GrainOverlay;
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/card_provider.dart';
@@ -36,7 +37,7 @@ class SettingsScreenState extends State<SettingsScreen>
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(20),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
@@ -48,7 +49,12 @@ class SettingsScreenState extends State<SettingsScreen>
               ),
             ],
           ),
-          child: Row(
+          child: Stack(
+            children: [
+              const GrainOverlay(),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
             children: [
               CircleAvatar(
                 radius: 30,
@@ -84,6 +90,9 @@ class SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
               ),
             ],
           ),
