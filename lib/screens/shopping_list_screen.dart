@@ -305,7 +305,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                             animation: animation,
                             builder: (BuildContext context, Widget? child) {
                               final double animValue = Curves.easeInOut.transform(animation.value);
-                              final double elevation = lerpDouble(0, 8, animValue)!;
+                              final double elevation = lerpDouble(0, 0, animValue)!;
                               final double scale = lerpDouble(1, 1.05, animValue)!;
                               
                               return Transform.scale(
