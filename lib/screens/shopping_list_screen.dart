@@ -75,62 +75,164 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   Future<void> _showEditDialog(ShoppingProvider provider, ShoppingItem item) async {
     final nameController = TextEditingController(text: item.name);
     final quantityController = TextEditingController(text: item.quantity.toString());
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final result = await showDialog<ShoppingItem>(
+    final result = await showModalBottomSheet<ShoppingItem>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Item'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Item Name',
-                    hintText: 'e.g., Milk, Bread',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: quantityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity',
-                    hintText: '1',
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: colorScheme.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (nameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter an item name')),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Edit Item',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Item Name',
+                  hintText: 'e.g., Milk, Bread',
+                ),
+              ),
+              const SizedBox(height: 20),
+              StatefulBuilder(
+                builder: (context, setQuantityState) {
+                  int qty = int.tryParse(quantityController.text) ?? 1;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Quantity',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          if (qty > 1) {
+                            setQuantityState(() {
+                              quantityController.text = (qty - 1).toString();
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.remove,
+                            size: 20,
+                            color: qty > 1
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurface.withValues(alpha: 0.25),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          qty.toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          if (qty < 99) {
+                            setQuantityState(() {
+                              quantityController.text = (qty + 1).toString();
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            size: 20,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   );
-                  return;
-                }
-                final updated = ShoppingItem(
-                  id: item.id,
-                  name: nameController.text.trim(),
-                  quantity: int.tryParse(quantityController.text) ?? 1,
-                  category: item.category,
-                  isCompleted: item.isCompleted,
-                  createdAt: item.createdAt,
-                );
-                Navigator.pop(context, updated);
-              },
-              child: const Text('Save'),
-            ),
-          ],
+                },
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        if (nameController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(sheetContext).showSnackBar(
+                            const SnackBar(content: Text('Please enter an item name')),
+                          );
+                          return;
+                        }
+                        final updated = ShoppingItem(
+                          id: item.id,
+                          name: nameController.text.trim(),
+                          quantity: int.tryParse(quantityController.text) ?? 1,
+                          category: item.category,
+                          isCompleted: item.isCompleted,
+                          createdAt: item.createdAt,
+                        );
+                        Navigator.pop(sheetContext, updated);
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
