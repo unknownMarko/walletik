@@ -57,14 +57,9 @@ class _CardsScreenState extends State<CardsScreen>
 
   Future<void> _addCard(BuildContext context) async {
     final cardProvider = context.read<CardProvider>();
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddCardScreen(),
-      ),
-    );
+    final result = await AddCardScreen.show(context);
 
-    if (result != null && result is Map<String, dynamic> && mounted) {
+    if (result != null && mounted) {
       final newCard = LoyaltyCard(
         shopName: result['name'] as String,
         description: result['description'] as String?,
