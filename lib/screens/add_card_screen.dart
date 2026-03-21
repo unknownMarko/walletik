@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/constants.dart';
 import '../utils/color_utils.dart';
-import '../utils/barcode_utils.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddCardScreen extends StatefulWidget {
@@ -20,24 +18,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final TextEditingController numberController = TextEditingController();
   String barcodeFormat = 'code128';
   String selectedColor = '#0066CC';
-  String? _cachedBarcodeSvg;
-  String? _cachedBarcodeKey;
   bool get isEditMode => widget.editCard != null;
-
-  String? _getBarcodeSvg(String code, String format) {
-    if (code.isEmpty) return null;
-    final key = '${code}_$format';
-    if (_cachedBarcodeKey != key) {
-      _cachedBarcodeKey = key;
-      _cachedBarcodeSvg = BarcodeUtils.generate(code, format);
-    }
-    return _cachedBarcodeSvg;
-  }
 
   @override
   void initState() {
     super.initState();
-    numberController.addListener(() => setState(() {}));
     if (isEditMode) {
       nameController.text = widget.editCard!['shopName'] ?? '';
       descriptionController.text = widget.editCard!['description'] ?? '';
@@ -119,7 +104,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final svgCode = _getBarcodeSvg(numberController.text, barcodeFormat);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -179,40 +163,55 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: AppConstants.cardBackgroundColors.map((color) {
-                          final isSelected = selectedColor == color;
-                          return GestureDetector(
-                            onTap: () => setState(() => selectedColor = color),
-                            child: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: ColorUtils.hexToColor(color),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected ? colorScheme.primary : Colors.transparent,
-                                  width: 3,
+                      ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.white,
+                              Colors.white,
+                              Colors.white,
+                              Colors.white.withValues(alpha: 0),
+                            ],
+                            stops: const [0.0, 0.7, 0.85, 1.0],
+                          ).createShader(bounds);
+                        },
+                        blendMode: BlendMode.dstIn,
+                        child: SizedBox(
+                        height: 42,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: AppConstants.cardBackgroundColors.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 10),
+                          itemBuilder: (context, index) {
+                            final color = AppConstants.cardBackgroundColors[index];
+                            final isSelected = selectedColor == color;
+                            return GestureDetector(
+                              onTap: () => setState(() => selectedColor = color),
+                              child: Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: ColorUtils.hexToColor(color),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? colorScheme.primary : Colors.transparent,
+                                    width: 3,
+                                  ),
                                 ),
+                                child: isSelected
+                                    ? const Icon(Icons.check, color: Colors.white, size: 18)
+                                    : null,
                               ),
-                              child: isSelected
-                                  ? const Icon(Icons.check, color: Colors.white, size: 18)
-                                  : null,
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          },
+                        ),
+                      ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
-                  if (svgCode != null) ...[
-                    SvgPicture.string(
-                      svgCode,
-                      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-                    ),
-                  ],
+                  
                     ],
                   ),
                   Padding(
