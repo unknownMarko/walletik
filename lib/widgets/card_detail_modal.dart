@@ -5,7 +5,6 @@ import '../models/loyalty_card.dart';
 import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 import '../utils/barcode_utils.dart';
-import '../utils/route_transitions.dart';
 import '../screens/add_card_screen.dart';
 
 class CardDetailModal extends StatefulWidget {
@@ -211,13 +210,8 @@ class _CardDetailModalState extends State<CardDetailModal>
         ),
         GestureDetector(
           onTap: () async {
-            final result = await Navigator.push(
-              context,
-              FadeScalePageRoute(
-                builder: (context) => AddCardScreen(editCard: card.toJson()),
-              ),
-            );
-            if (result != null && result is Map<String, dynamic>) {
+            final result = await AddCardScreen.show(context, editCard: card.toJson());
+            if (result != null) {
               final updatedCard = LoyaltyCard(
                 id: card.id,
                 shopName: result['name'] as String,

@@ -9,7 +9,6 @@ import '../providers/shopping_provider.dart';
 import '../screens/add_card_screen.dart';
 import '../utils/barcode_utils.dart';
 import '../utils/color_utils.dart';
-import '../utils/route_transitions.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToCards;
@@ -321,11 +320,7 @@ class HomeScreenState extends State<HomeScreen>
           const SizedBox(height: 28),
           ElevatedButton(
             onPressed: () async {
-              final result = await Navigator.of(context).push<Map<String, dynamic>>(
-                FadeScalePageRoute(
-                  builder: (context) => const AddCardScreen(),
-                ),
-              );
+              final result = await AddCardScreen.show(context);
               if (result != null && mounted) {
                 context.read<CardProvider>().loadCards();
               }
