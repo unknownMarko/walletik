@@ -164,7 +164,7 @@ class _CardDetailModalState extends State<CardDetailModal>
           boxShadow: const [
             BoxShadow(
               color: Color.fromRGBO(0, 0, 0, 0.3),
-              blurRadius: 20,
+              blurRadius: 6,
               offset: Offset(0, 10),
             ),
           ],
