@@ -250,7 +250,7 @@ class SettingsScreenState extends State<SettingsScreen>
     super.build(context);
     return BackgroundLogo(
       child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             children: [
               _buildUserCard(),
               _buildSectionHeader('Appearance'),

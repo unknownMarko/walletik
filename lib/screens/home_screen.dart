@@ -379,7 +379,6 @@ class HomeScreenState extends State<HomeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 20),
                         // 1. Header — kept exactly as-is
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),

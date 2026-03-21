@@ -118,7 +118,7 @@ class _CardsScreenState extends State<CardsScreen>
       child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Row(
                     children: [
                       Expanded(
