@@ -142,7 +142,7 @@ class HomeScreenState extends State<HomeScreen>
           boxShadow: [
             BoxShadow(
               color: cardColor.withValues(alpha: 0.3),
-              blurRadius: 16,
+              blurRadius: 4,
               offset: const Offset(0, 6),
             ),
           ],
