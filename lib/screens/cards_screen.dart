@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/background_logo.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 
 import 'add_card_screen.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
@@ -23,6 +24,8 @@ class _CardsScreenState extends State<CardsScreen>
   bool get wantKeepAlive => true;
 
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final _gridViewKey = GlobalKey();
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _CardsScreenState extends State<CardsScreen>
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -74,18 +78,6 @@ class _CardsScreenState extends State<CardsScreen>
     }
   }
 
-  Widget _buildCardItem(LoyaltyCard card, int index) {
-    return GestureDetector(
-      onTap: () => _showCardDetail(card, index),
-      child: card_widget.LoyaltyCard(
-        shopName: card.shopName,
-        description: card.description ?? '',
-        cardNumber: card.cardNumber,
-        cardColor: ColorUtils.hexToColor(card.color),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -108,6 +100,26 @@ class _CardsScreenState extends State<CardsScreen>
         }
       });
     }
+
+    final generatedChildren = List.generate(
+      displayCards.length,
+      (index) {
+        final card = displayCards[index];
+        return SizedBox(
+          key: Key(card.id ?? '${card.shopName}_${card.cardNumber}'),
+          height: 100,
+          child: GestureDetector(
+            onTap: () => _showCardDetail(card, index),
+            child: card_widget.LoyaltyCard(
+              shopName: card.shopName,
+              description: card.description ?? '',
+              cardNumber: card.cardNumber,
+              cardColor: ColorUtils.hexToColor(card.color),
+            ),
+          ),
+        );
+      },
+    );
 
     return BackgroundLogo(
       child: Column(
@@ -174,33 +186,27 @@ class _CardsScreenState extends State<CardsScreen>
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: (displayCards.length + 1) ~/ 2,
-                    itemBuilder: (context, rowIndex) {
-                      final leftIndex = rowIndex * 2;
-                      final rightIndex = leftIndex + 1;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 100,
-                                child: _buildCardItem(displayCards[leftIndex], leftIndex),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: rightIndex < displayCards.length
-                                  ? SizedBox(
-                                      height: 100,
-                                      child: _buildCardItem(displayCards[rightIndex], rightIndex),
-                                    )
-                                  : const SizedBox(),
-                            ),
-                          ],
+                  child: ReorderableBuilder(
+                    scrollController: _scrollController,
+                    enableDraggable: _searchController.text.isEmpty,
+                    dragChildBoxDecoration: const BoxDecoration(),
+                    onReorder: (ReorderedListFunction reorderedListFunction) {
+                      final reordered = reorderedListFunction(displayCards) as List<LoyaltyCard>;
+                      provider.reorderCards(reordered);
+                    },
+                    children: generatedChildren,
+                    builder: (children) {
+                      return GridView(
+                        key: _gridViewKey,
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 1.7,
                         ),
+                        children: children,
                       );
                     },
                   ),
