@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/background_logo.dart';
 import '../widgets/loyalty_card.dart' show GrainOverlay;
 import 'package:provider/provider.dart';
@@ -40,10 +41,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   }
 
   Future<void> _toggleItemCompletion(ShoppingItem item, ShoppingProvider provider) async {
+    HapticFeedback.lightImpact();
     await provider.toggleCompletion(item);
   }
 
   void _deleteItem(ShoppingItem item, ShoppingProvider provider) {
+    HapticFeedback.mediumImpact();
     setState(() {
       _pendingDeleteId = item.id;
     });
@@ -59,6 +62,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   }
 
   void _undoDelete(ShoppingProvider provider) {
+    HapticFeedback.lightImpact();
     setState(() {
       _pendingDeleteId = null;
     });
@@ -67,6 +71,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   Future<void> _quickAdd(ShoppingProvider provider) async {
     final name = _quickAddController.text.trim();
     if (name.isEmpty) return;
+    HapticFeedback.lightImpact();
     final item = ShoppingItem(
       id: '',
       name: name,
@@ -523,7 +528,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                     const SizedBox(width: 4),
                     GestureDetector(
                       onTap: allItems.any((i) => i.isCompleted)
-                          ? () => context.read<ShoppingProvider>().clearCompleted()
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              context.read<ShoppingProvider>().clearCompleted();
+                            }
                           : null,
                       child: ClipRRect(
                         borderRadius: const BorderRadius.only(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/background_logo.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +44,7 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   void _showCardDetail(LoyaltyCard card, int index) {
+    HapticFeedback.lightImpact();
     widget.onCardTap?.call(card);
   }
 

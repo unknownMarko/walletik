@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class LoyaltyCard extends StatelessWidget {
@@ -103,19 +104,59 @@ class LoyaltyCard extends StatelessWidget {
   }
 }
 
-/// Reusable grain overlay widget.
+/// Reusable grain overlay widget. Uses a single cached texture for all instances.
 class GrainOverlay extends StatelessWidget {
   final double opacity;
   const GrainOverlay({super.key, this.opacity = 0.5});
 
+  static ui.Image? _cachedTexture;
+  static bool _generating = false;
+
+  static Future<ui.Image> _generateTexture() async {
+    const size = 64;
+    final random = Random(42);
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final paint = Paint();
+
+    for (int x = 0; x < size; x += 3) {
+      for (int y = 0; y < size; y += 3) {
+        final noise = random.nextDouble() * 0.05 - 0.025;
+        if (noise.abs() < 0.006) continue;
+        paint.color = noise > 0
+            ? Color.fromRGBO(255, 255, 255, noise)
+            : Color.fromRGBO(0, 0, 0, -noise);
+        canvas.drawRect(Rect.fromLTWH(x.toDouble(), y.toDouble(), 3, 3), paint);
+      }
+    }
+
+    final picture = recorder.endRecording();
+    return picture.toImage(size, size);
+  }
+
+  static Future<void> warmUp() async {
+    if (_cachedTexture != null || _generating) return;
+    _generating = true;
+    _cachedTexture = await _generateTexture();
+    _generating = false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_cachedTexture == null) {
+      warmUp().then((_) {
+        // Trigger rebuild via framework — texture will be ready next frame
+        (context as Element).markNeedsBuild();
+      });
+      return const SizedBox.shrink();
+    }
+
     return Positioned.fill(
       child: IgnorePointer(
         child: Opacity(
           opacity: opacity,
-          child: RepaintBoundary(
-            child: CustomPaint(painter: _GrainPainter()),
+          child: CustomPaint(
+            painter: _CachedGrainPainter(_cachedTexture!),
           ),
         ),
       ),
@@ -123,25 +164,25 @@ class GrainOverlay extends StatelessWidget {
   }
 }
 
-class _GrainPainter extends CustomPainter {
-  static final Random _random = Random(42);
+class _CachedGrainPainter extends CustomPainter {
+  final ui.Image texture;
+
+  _CachedGrainPainter(this.texture);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    const step = 3.0;
-    for (double x = 0; x < size.width; x += step) {
-      for (double y = 0; y < size.height; y += step) {
-        final noise = _random.nextDouble() * 0.05 - 0.025;
-        if (noise.abs() < 0.006) continue;
-        paint.color = noise > 0
-            ? Colors.white.withValues(alpha: noise)
-            : Colors.black.withValues(alpha: -noise);
-        canvas.drawRect(Rect.fromLTWH(x, y, step, step), paint);
+    final paint = Paint()..filterQuality = FilterQuality.none;
+    final src = Rect.fromLTWH(0, 0, texture.width.toDouble(), texture.height.toDouble());
+
+    // Tile the texture across the entire area
+    for (double x = 0; x < size.width; x += texture.width) {
+      for (double y = 0; y < size.height; y += texture.height) {
+        final dst = Rect.fromLTWH(x, y, texture.width.toDouble(), texture.height.toDouble());
+        canvas.drawImageRect(texture, src, dst, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(_CachedGrainPainter oldDelegate) => oldDelegate.texture != texture;
 }
