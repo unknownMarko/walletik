@@ -19,6 +19,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   bool get wantKeepAlive => true;
 
   final _quickAddController = TextEditingController();
+  // Inline undo state
+  String? _pendingDeleteId;
 
   @override
   void dispose() {
@@ -41,22 +43,25 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
     await provider.toggleCompletion(item);
   }
 
-  Future<void> _deleteItem(ShoppingItem item, ShoppingProvider provider) async {
-    await provider.deleteItem(item);
+  void _deleteItem(ShoppingItem item, ShoppingProvider provider) {
+    setState(() {
+      _pendingDeleteId = item.id;
+    });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${item.name} removed'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () async {
-              await provider.addItem(item);
-            },
-          ),
-        ),
-      );
-    }
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _pendingDeleteId == item.id) {
+        provider.deleteItem(item);
+        setState(() {
+          _pendingDeleteId = null;
+        });
+      }
+    });
+  }
+
+  void _undoDelete(ShoppingProvider provider) {
+    setState(() {
+      _pendingDeleteId = null;
+    });
   }
 
   Future<void> _quickAdd(ShoppingProvider provider) async {
@@ -328,6 +333,56 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                         itemBuilder: (context, index) {
                           final item = allItems[index];
                           final isCompleted = item.isCompleted;
+                          final isPendingDelete = _pendingDeleteId == item.id;
+
+                          if (isPendingDelete) {
+                            return Padding(
+                              key: Key(item.id),
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(width: 16),
+                                    Icon(
+                                      Icons.delete_outline,
+                                      size: 16,
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${item.name} removed',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTap: () => _undoDelete(context.read<ShoppingProvider>()),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        child: Text(
+                                          'Undo',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
 
                           return Padding(
                             key: Key(item.id),
@@ -360,9 +415,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                     _showEditDialog(context.read<ShoppingProvider>(), item);
                                     return false;
                                   }
-                                  return true;
+                                  _deleteItem(item, context.read<ShoppingProvider>());
+                                  return false;
                                 },
-                                onDismissed: (direction) => _deleteItem(item, context.read<ShoppingProvider>()),
                                 child: GestureDetector(
                                   onTap: () => _toggleItemCompletion(item, context.read<ShoppingProvider>()),
                                   child: Stack(
@@ -424,7 +479,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                       ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 4 + (MediaQuery.of(context).viewInsets.bottom > 0 ? (MediaQuery.of(context).viewInsets.bottom - MediaQuery.of(context).viewPadding.bottom - kBottomNavigationBarHeight).clamp(0.0, double.infinity) : 0.0)),
                 child: Row(
                   children: [
                     Expanded(
