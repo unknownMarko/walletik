@@ -150,7 +150,9 @@ class HomeScreenState extends State<HomeScreen>
             ],
             stops: const [0.0, 0.5, 1.0],
           ),
-          
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
