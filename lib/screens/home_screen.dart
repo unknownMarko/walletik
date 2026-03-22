@@ -312,66 +312,113 @@ class HomeScreenState extends State<HomeScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          const SizedBox(height: 48),
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Icon(
-              Icons.credit_card_outlined,
-              size: 44,
-              color: colorScheme.primary.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No cards yet',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add your first loyalty card to get started',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 28),
-          ElevatedButton(
-            onPressed: () async {
+          const SizedBox(height: 16),
+          // Getting started steps
+          _buildOnboardingStep(
+            icon: Icons.credit_card_rounded,
+            title: 'Add your loyalty cards',
+            subtitle: 'Scan barcode or enter manually',
+            color: colorScheme.primary,
+            onTap: () async {
               final result = await AddCardScreen.show(context);
               if (result != null && mounted) {
-                context.read<CardProvider>().loadCards();
+                final provider = context.read<CardProvider>();
+                final newCard = LoyaltyCard(
+                  shopName: result['name'] as String,
+                  cardNumber: result['code'] as String,
+                  description: result['description'] as String?,
+                  color: (result['color'] as String?) ?? '#0066CC',
+                  barcodeFormat: (result['barcodeFormat'] as String?) ?? 'code128',
+                  createdAt: DateTime.now(),
+                  lastUsed: DateTime.now(),
+                );
+                await provider.addCard(newCard);
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Add Card',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          ),
+          const SizedBox(height: 10),
+          _buildOnboardingStep(
+            icon: Icons.qr_code_scanner_rounded,
+            title: 'Quick access from home',
+            subtitle: 'Set your most used cards for instant scanning',
+            color: Colors.orange.shade700,
+            onTap: null,
+          ),
+          const SizedBox(height: 10),
+          _buildOnboardingStep(
+            icon: Icons.shopping_cart_rounded,
+            title: 'Shopping list built-in',
+            subtitle: 'Swipe left to delete, right to edit, tap to check off',
+            color: Colors.teal,
+            onTap: () => widget.onNavigateToCards?.call(2),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOnboardingStep({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+          ],
+        ),
       ),
     );
   }
