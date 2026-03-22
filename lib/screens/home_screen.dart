@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../widgets/loyalty_card.dart' as card_widget;
 import '../models/loyalty_card.dart';
+import '../models/shopping_item.dart';
 import '../providers/card_provider.dart';
 import '../providers/shopping_provider.dart';
 import '../screens/add_card_screen.dart';
@@ -257,50 +258,106 @@ class HomeScreenState extends State<HomeScreen>
 
   Widget _buildShoppingPreview() {
     final colorScheme = Theme.of(context).colorScheme;
-    final pendingCount = context.select<ShoppingProvider, int>((p) => p.pendingItems.length);
+    final pendingItems = context.select<ShoppingProvider, List<ShoppingItem>>((p) => p.pendingItems);
+    final previewItems = pendingItems.take(3).toList();
+    final remaining = pendingItems.length - previewItems.length;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
         onTap: () => widget.onNavigateToCards?.call(2),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.shopping_cart_rounded,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.shopping_cart_rounded,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Shopping list',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (pendingItems.isNotEmpty)
+                    Text(
+                      '${pendingItems.length}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  pendingCount == 0
-                      ? 'Shopping list is empty'
-                      : '$pendingCount item${pendingCount == 1 ? '' : 's'} on your list',
+              if (pendingItems.isEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'All done! No pending items.',
                   style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
+              ] else ...[
+                const SizedBox(height: 12),
+                ...previewItems.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: colorScheme.onSurface.withValues(alpha: 0.2),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+                if (remaining > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '+$remaining more',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.primary.withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
