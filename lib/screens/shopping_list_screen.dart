@@ -528,9 +528,30 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                     const SizedBox(width: 4),
                     GestureDetector(
                       onTap: allItems.any((i) => i.isCompleted)
-                          ? () {
+                          ? () async {
                               HapticFeedback.mediumImpact();
-                              context.read<ShoppingProvider>().clearCompleted();
+                              final provider = context.read<ShoppingProvider>();
+                              final count = allItems.where((i) => i.isCompleted).length;
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Clear completed'),
+                                  content: Text('Remove $count completed item${count > 1 ? 's' : ''}?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('Clear'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed == true) {
+                                provider.clearCompleted();
+                              }
                             }
                           : null,
                       child: ClipRRect(
