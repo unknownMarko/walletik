@@ -558,20 +558,18 @@ class HomeScreenState extends State<HomeScreen>
                                       ),
                                     ],
                                   ),
-                                  ShaderMask(
-                                    shaderCallback: (bounds) => LinearGradient(
-                                      colors: [
-                                        Theme.of(context).colorScheme.primary,
-                                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                                      ],
-                                    ).createShader(bounds),
-                                    child: Text(
-                                      _userName,
-                                      style: const TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
+                                  Text(
+                                    _userName,
+                                    style: TextStyle(
+                                      fontSize: 36,
+                                      fontWeight: FontWeight.bold,
+                                      foreground: Paint()
+                                        ..shader = LinearGradient(
+                                          colors: [
+                                            Theme.of(context).colorScheme.primary,
+                                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                                          ],
+                                        ).createShader(const Rect.fromLTWH(0, 0, 300, 50)),
                                     ),
                                   ),
                                 ],
