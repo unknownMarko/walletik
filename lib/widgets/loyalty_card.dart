@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class LoyaltyCard extends StatelessWidget {
@@ -115,8 +114,7 @@ class GrainOverlay extends StatelessWidget {
       child: IgnorePointer(
         child: Opacity(
           opacity: opacity,
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 0.6, sigmaY: 0.6),
+          child: RepaintBoundary(
             child: CustomPaint(painter: _GrainPainter()),
           ),
         ),
@@ -131,11 +129,11 @@ class _GrainPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
-    const step = 1.5;
+    const step = 3.0;
     for (double x = 0; x < size.width; x += step) {
       for (double y = 0; y < size.height; y += step) {
-        final noise = _random.nextDouble() * 0.06 - 0.03;
-        if (noise.abs() < 0.008) continue;
+        final noise = _random.nextDouble() * 0.05 - 0.025;
+        if (noise.abs() < 0.006) continue;
         paint.color = noise > 0
             ? Colors.white.withValues(alpha: noise)
             : Colors.black.withValues(alpha: -noise);

@@ -115,6 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         top: true,
         bottom: false,
