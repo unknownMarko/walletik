@@ -94,8 +94,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
       context: context,
       backgroundColor: colorScheme.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       builder: (sheetContext) {
         return Padding(
