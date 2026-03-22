@@ -551,11 +551,16 @@ class HomeScreenState extends State<HomeScreen>
                                   ),
                                 ],
                               ),
-                              IconButton(
-                                onPressed: () =>
-                                    widget.onNavigateToCards?.call(3),
-                                icon: const Icon(Icons.person_sharp),
-                                iconSize: 28,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: GestureDetector(
+                                  onTap: () => widget.onNavigateToCards?.call(3),
+                                  child: Icon(
+                                    Icons.person_sharp,
+                                    size: 28,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
