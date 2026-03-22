@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/background_logo.dart';
-import '../widgets/loyalty_card.dart' show GrainOverlay;
+
 import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../models/shopping_item.dart';
@@ -478,7 +478,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                       ),
                                     ],
                                   ),
-                                      const GrainOverlay(),
                                     ],
                                   ),
                                 ),
@@ -493,40 +492,45 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                 child: Row(
                   children: [
                     Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          bottomLeft: Radius.circular(12),
-                        ),
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 48,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            ),
-                            const GrainOverlay(),
-                            SizedBox(
-                              height: 48,
-                              child: TextField(
-                                controller: _quickAddController,
-                                decoration: InputDecoration(
-                                  hintText: 'Add item...',
-                                  filled: true,
-                                  fillColor: Colors.transparent,
-                                  border: OutlineInputBorder(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(12),
-                                      bottomLeft: Radius.circular(12),
-                                    ),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                                ),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
+                      child: SizedBox(
+                        height: 48,
+                        child: TextField(
+                          controller: _quickAddController,
+                          decoration: InputDecoration(
+                            hintText: 'Add item...',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomLeft: Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                               ),
                             ),
-                          ],
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomLeft: Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomLeft: Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                          ),
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
                         ),
                       ),
                     ),
@@ -559,27 +563,25 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                               }
                             }
                           : null,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                          ),
                         ),
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: Icon(
-                                Icons.cleaning_services_rounded,
-                                size: 20,
-                                color: allItems.any((i) => i.isCompleted)
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            const GrainOverlay(),
-                          ],
+                        child: Icon(
+                          Icons.cleaning_services_rounded,
+                          size: 20,
+                          color: allItems.any((i) => i.isCompleted)
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                       ),
                     ),
