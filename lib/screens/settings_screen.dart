@@ -6,6 +6,7 @@ import '../providers/theme_provider.dart';
 import '../providers/card_provider.dart';
 import '../providers/shopping_provider.dart';
 import '../utils/color_utils.dart';
+import '../services/data_export_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -352,6 +353,112 @@ class SettingsScreenState extends State<SettingsScreen>
               ),
               _buildSectionHeader('Quick Access Cards'),
               _buildQuickAccessSettings(),
+              _buildSectionHeader('Data'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final errorColor = Theme.of(context).colorScheme.error;
+                          try {
+                            await DataExportService.exportData();
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Export failed: $e'),
+                                backgroundColor: errorColor,
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.upload_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text('Export', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final errorColor = Theme.of(context).colorScheme.error;
+                          final cardProvider = context.read<CardProvider>();
+                          final shoppingProvider = context.read<ShoppingProvider>();
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Import Data'),
+                              content: const Text('This will replace all current data. Are you sure?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Import'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true) return;
+                          try {
+                            final summary = await DataExportService.importData();
+                            cardProvider.loadCards();
+                            shoppingProvider.loadItems();
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(summary)),
+                            );
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Import failed: $e'),
+                                backgroundColor: errorColor,
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.download_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text('Import', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               _buildSectionHeader('About'),
               const ListTile(
                 leading: Icon(Icons.info),
