@@ -392,14 +392,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                           return Padding(
                             key: Key(item.id),
                             padding: const EdgeInsets.symmetric(vertical: 3),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                                ),
-                              ),
-                              child: ClipRRect(
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Dismissible(
                                 key: Key('dismiss_${item.id}'),
@@ -490,7 +483,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                 ),
                               ),
                             ),
-                          ),
                           );
                         },
                       ),
