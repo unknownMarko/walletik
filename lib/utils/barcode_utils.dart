@@ -31,10 +31,11 @@ class BarcodeUtils {
         data,
         width: format == 'qrCode' ? 200 : 280,
         height: format == 'qrCode' ? 200 : 80,
+        drawText: false,
       );
     } catch (e) {
       final fallbackBarcode = Barcode.code128();
-      return fallbackBarcode.toSvg(data, width: 280, height: 80);
+      return fallbackBarcode.toSvg(data, width: 280, height: 80, drawText: false);
     }
   }
 }
