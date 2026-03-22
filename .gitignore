@@ -3,6 +3,9 @@
 *.log
 flutter_*.png
 .sisyphus/
+.claude/
+devtools_options.yaml
+walletik_import.json
 *.pyc
 *.swp
 .DS_Store
