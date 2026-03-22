@@ -20,12 +20,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   bool get wantKeepAlive => true;
 
   final _quickAddController = TextEditingController();
+  final _quickAddFocusNode = FocusNode();
   // Inline undo state — supports multiple pending deletes
   final Set<String> _pendingDeleteIds = {};
 
   @override
   void dispose() {
     _quickAddController.dispose();
+    _quickAddFocusNode.dispose();
     super.dispose();
   }
 
@@ -81,6 +83,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
     );
     await provider.addItem(item);
     _quickAddController.clear();
+    _quickAddFocusNode.requestFocus();
   }
 
   Future<void> _showEditDialog(ShoppingProvider provider, ShoppingItem item) async {
@@ -496,6 +499,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                         height: 48,
                         child: TextField(
                           controller: _quickAddController,
+                          focusNode: _quickAddFocusNode,
                           decoration: InputDecoration(
                             hintText: 'Add item...',
                             filled: true,
