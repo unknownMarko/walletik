@@ -63,7 +63,7 @@ class _CardDetailModalState extends State<CardDetailModal>
     if (_cachedCardKey != key) {
       _cachedCardKey = key;
       _cachedBarcodeSvg = BarcodeUtils.generate(card.cardNumber, card.barcodeFormat);
-      _cachedCardColor = ColorUtils.hexToColor(card.color);
+      _cachedCardColor = ColorUtils.cardColor(card.color, Theme.of(context).brightness);
     }
   }
 

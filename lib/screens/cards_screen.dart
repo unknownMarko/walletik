@@ -116,7 +116,7 @@ class _CardsScreenState extends State<CardsScreen>
               shopName: card.shopName,
               description: card.description ?? '',
               cardNumber: card.cardNumber,
-              cardColor: ColorUtils.hexToColor(card.color),
+              cardColor: ColorUtils.cardColor(card.color, Theme.of(context).brightness),
             ),
           ),
         );

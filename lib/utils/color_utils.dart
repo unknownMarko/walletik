@@ -11,4 +11,13 @@ class ColorUtils {
       return _fallbackColor;
     }
   }
+
+  /// Darken a color for dark themes — makes cards less bright against dark backgrounds.
+  static Color cardColor(String hex, Brightness brightness) {
+    final color = hexToColor(hex);
+    if (brightness == Brightness.dark) {
+      return Color.lerp(color, Colors.black, 0.25)!;
+    }
+    return color;
+  }
 }
