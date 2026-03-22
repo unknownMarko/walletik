@@ -11,6 +11,7 @@ import '../providers/shopping_provider.dart';
 import '../screens/add_card_screen.dart';
 import '../utils/barcode_utils.dart';
 import '../utils/color_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToCards;
@@ -31,9 +32,25 @@ class HomeScreenState extends State<HomeScreen>
   @override
   bool get wantKeepAlive => true;
 
+  String _userName = 'Guest';
+
   // Barcode SVG cache
   String? _cachedBarcodeSvg;
   String? _cachedBarcodeKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('userName');
+    if (name != null && name.isNotEmpty && mounted) {
+      setState(() => _userName = name);
+    }
+  }
 
   String _getBarcodeSvg(String cardNumber, String barcodeFormat) {
     final key = '${cardNumber}_$barcodeFormat';
@@ -260,7 +277,7 @@ class HomeScreenState extends State<HomeScreen>
   Widget _buildShoppingPreview() {
     final colorScheme = Theme.of(context).colorScheme;
     final pendingItems = context.select<ShoppingProvider, List<ShoppingItem>>((p) => p.pendingItems);
-    final previewItems = pendingItems.take(3).toList();
+    final previewItems = pendingItems.take(5).toList();
     final remaining = pendingItems.length - previewItems.length;
 
     return Padding(
@@ -542,7 +559,7 @@ class HomeScreenState extends State<HomeScreen>
                                     ],
                                   ),
                                   Text(
-                                    'Guest',
+                                    _userName,
                                     style: TextStyle(
                                       fontSize: 36,
                                       fontWeight: FontWeight.bold,
