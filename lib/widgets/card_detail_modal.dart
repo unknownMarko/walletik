@@ -274,19 +274,33 @@ class _CardDetailModalState extends State<CardDetailModal>
 
   Widget _buildBarcode(LoyaltyCard card) {
     if (_cachedBarcodeSvg == null) return const SizedBox.shrink();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SvgPicture.string(
-        _cachedBarcodeSvg!,
-        width: double.infinity,
-          height: card.barcodeFormat == 'qrCode' ? 180 : 70,
-        fit: BoxFit.contain,
-      ),
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SvgPicture.string(
+            _cachedBarcodeSvg!,
+            width: double.infinity,
+            height: card.barcodeFormat == 'qrCode' ? 180 : 70,
+            fit: BoxFit.contain,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          card.cardNumber,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
     );
   }
 
