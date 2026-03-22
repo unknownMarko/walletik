@@ -44,8 +44,9 @@ class SettingsScreenState extends State<SettingsScreen>
       context: context,
       backgroundColor: colorScheme.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       builder: (sheetContext) {
         return Padding(
@@ -120,6 +121,7 @@ class SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
                 radius: 30,
@@ -135,29 +137,15 @@ class SettingsScreenState extends State<SettingsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _userName,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: _editUserName,
-                          child: Icon(
-                            Icons.edit_rounded,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      _userName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -168,6 +156,14 @@ class SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
+                ),
+              ),
+              GestureDetector(
+                onTap: _editUserName,
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: 22,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
             ],
@@ -246,8 +242,9 @@ class SettingsScreenState extends State<SettingsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -323,8 +320,9 @@ class SettingsScreenState extends State<SettingsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       builder: (sheetContext) {
         final allCards = cardProvider.cards;

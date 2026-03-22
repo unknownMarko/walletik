@@ -14,8 +14,9 @@ class AddCardScreen extends StatefulWidget {
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       builder: (_) => AddCardScreen(editCard: editCard),
     );

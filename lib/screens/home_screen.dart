@@ -558,12 +558,20 @@ class HomeScreenState extends State<HomeScreen>
                                       ),
                                     ],
                                   ),
-                                  Text(
-                                    _userName,
-                                    style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.primary,
+                                  ShaderMask(
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: [
+                                        Theme.of(context).colorScheme.primary,
+                                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                                      ],
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      _userName,
+                                      style: const TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ],
