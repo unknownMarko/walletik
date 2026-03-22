@@ -20,7 +20,7 @@ class BackgroundLogo extends StatelessWidget {
               width: double.infinity,
               fit: BoxFit.fitWidth,
               filterQuality: FilterQuality.low,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.09),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
               colorBlendMode: BlendMode.srcIn,
               cacheWidth: ((MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).toInt()).clamp(1, 4096),
             ),

@@ -115,7 +115,7 @@ class SettingsScreenState extends State<SettingsScreen>
                 leading: Icon(
                   slotIcons[index],
                   color: card != null
-                      ? ColorUtils.hexToColor(card.color)
+                      ? ColorUtils.cardColor(card.color, Theme.of(context).brightness)
                       : colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 title: Text(
@@ -293,7 +293,7 @@ class SettingsScreenState extends State<SettingsScreen>
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: ColorUtils.hexToColor(card.color),
+                          color: ColorUtils.cardColor(card.color, Theme.of(context).brightness),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),

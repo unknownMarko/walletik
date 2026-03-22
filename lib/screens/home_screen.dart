@@ -99,7 +99,7 @@ class HomeScreenState extends State<HomeScreen>
                               shopName: secondary.shopName,
                               description: secondary.description ?? '',
                               cardNumber: secondary.cardNumber,
-                              cardColor: ColorUtils.hexToColor(secondary.color),
+                              cardColor: ColorUtils.cardColor(secondary.color, Theme.of(context).brightness),
                             ),
                           ),
                         )
@@ -116,7 +116,7 @@ class HomeScreenState extends State<HomeScreen>
                               shopName: third.shopName,
                               description: third.description ?? '',
                               cardNumber: third.cardNumber,
-                              cardColor: ColorUtils.hexToColor(third.color),
+                              cardColor: ColorUtils.cardColor(third.color, Theme.of(context).brightness),
                             ),
                           ),
                         )
@@ -131,7 +131,7 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildPrimaryQuickCard(LoyaltyCard card, ColorScheme colorScheme) {
-    final cardColor = ColorUtils.hexToColor(card.color);
+    final cardColor = ColorUtils.cardColor(card.color, Theme.of(context).brightness);
     final isQr = card.barcodeFormat == 'qrCode';
 
     return GestureDetector(
@@ -519,22 +519,34 @@ class HomeScreenState extends State<HomeScreen>
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Welcome to',
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.7),
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Welcome to ',
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Walletik',
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Text(
-                                    'Walletik',
+                                    'Guest',
                                     style: TextStyle(
                                       fontSize: 36,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                 ],
