@@ -83,7 +83,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
     );
     await provider.addItem(item);
     _quickAddController.clear();
-    _quickAddFocusNode.requestFocus();
   }
 
   Future<void> _showEditDialog(ShoppingProvider provider, ShoppingItem item) async {
@@ -277,7 +276,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
       });
     }
 
-    return BackgroundLogo(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: BackgroundLogo(
       child: Column(
             children: [
               Expanded(
@@ -534,7 +535,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                             contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                           ),
                           textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _quickAdd(context.read<ShoppingProvider>()),
+                          onEditingComplete: () => _quickAdd(context.read<ShoppingProvider>()),
                         ),
                       ),
                     ),
@@ -594,6 +595,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
               ),
             ],
           ),
+    ),
     );
   }
 }
