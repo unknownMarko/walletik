@@ -392,7 +392,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                           return Padding(
                             key: Key(item.id),
                             padding: const EdgeInsets.symmetric(vertical: 3),
-                            child: ClipRRect(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Dismissible(
                                 key: Key('dismiss_${item.id}'),
@@ -432,18 +439,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                       Container(
                                         height: 48,
                                         width: 44,
-                                        decoration: BoxDecoration(
-                                          color: isCompleted
-                                              ? (isDarkTheme
-                                                  ? Colors.white.withValues(alpha: 0.05)
-                                                  : Colors.black.withValues(alpha: 0.05))
-                                              : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                          border: Border(
-                                            top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                            bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                            left: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                          ),
-                                        ),
+                                        color: isCompleted
+                                            ? (isDarkTheme
+                                                ? Colors.white.withValues(alpha: 0.05)
+                                                : Colors.black.withValues(alpha: 0.05))
+                                            : Theme.of(context).colorScheme.surfaceContainerHighest,
                                         child: Center(
                                           child: AnimatedScale(
                                             scale: isCompleted ? 1.15 : 1.0,
@@ -464,18 +464,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                         child: Container(
                                           height: 48,
                                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isCompleted
-                                                ? (isDarkTheme
-                                                    ? Colors.white.withValues(alpha: 0.05)
-                                                    : Colors.black.withValues(alpha: 0.05))
-                                                : Theme.of(context).colorScheme.surfaceContainerHighest,
-                                            border: Border(
-                                              top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                              bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                              right: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                                            ),
-                                          ),
+                                          color: isCompleted
+                                              ? (isDarkTheme
+                                                  ? Colors.white.withValues(alpha: 0.05)
+                                                  : Colors.black.withValues(alpha: 0.05))
+                                              : Theme.of(context).colorScheme.surfaceContainerHighest,
                                           alignment: Alignment.centerLeft,
                                           child: Text(
                                             item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
@@ -497,6 +490,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                 ),
                               ),
                             ),
+                          ),
                           );
                         },
                       ),
