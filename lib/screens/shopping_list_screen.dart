@@ -20,8 +20,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   bool get wantKeepAlive => true;
 
   final _quickAddController = TextEditingController();
-  // Inline undo state
-  String? _pendingDeleteId;
+  // Inline undo state — supports multiple pending deletes
+  final Set<String> _pendingDeleteIds = {};
 
   @override
   void dispose() {
@@ -48,23 +48,23 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
   void _deleteItem(ShoppingItem item, ShoppingProvider provider) {
     HapticFeedback.mediumImpact();
     setState(() {
-      _pendingDeleteId = item.id;
+      _pendingDeleteIds.add(item.id);
     });
 
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _pendingDeleteId == item.id) {
+      if (mounted && _pendingDeleteIds.contains(item.id)) {
         provider.deleteItem(item);
         setState(() {
-          _pendingDeleteId = null;
+          _pendingDeleteIds.remove(item.id);
         });
       }
     });
   }
 
-  void _undoDelete(ShoppingProvider provider) {
+  void _undoDelete(String itemId) {
     HapticFeedback.lightImpact();
     setState(() {
-      _pendingDeleteId = null;
+      _pendingDeleteIds.remove(itemId);
     });
   }
 
@@ -338,7 +338,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                         itemBuilder: (context, index) {
                           final item = allItems[index];
                           final isCompleted = item.isCompleted;
-                          final isPendingDelete = _pendingDeleteId == item.id;
+                          final isPendingDelete = _pendingDeleteIds.contains(item.id);
 
                           if (isPendingDelete) {
                             return Padding(
@@ -370,7 +370,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                     ),
                                     const Spacer(),
                                     GestureDetector(
-                                      onTap: () => _undoDelete(context.read<ShoppingProvider>()),
+                                      onTap: () => _undoDelete(item.id),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         child: Text(
@@ -439,18 +439,15 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                             : Theme.of(context).colorScheme.surfaceContainerHighest,
                                         child: Center(
                                           child: AnimatedScale(
-                                            scale: isCompleted ? 1.2 : 1.0,
+                                            scale: isCompleted ? 1.15 : 1.0,
                                             duration: const Duration(milliseconds: 200),
                                             curve: Curves.easeOutBack,
-                                            child: AnimatedContainer(
-                                              duration: const Duration(milliseconds: 200),
-                                              child: Icon(
-                                                isCompleted ? Icons.check_circle_rounded : Icons.check_rounded,
-                                                size: 22,
-                                                color: isCompleted
-                                                    ? Theme.of(context).colorScheme.primary
-                                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
-                                              ),
+                                            child: Icon(
+                                              Icons.check_rounded,
+                                              size: 22,
+                                              color: isCompleted
+                                                  ? Theme.of(context).colorScheme.primary
+                                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
                                             ),
                                           ),
                                         ),
