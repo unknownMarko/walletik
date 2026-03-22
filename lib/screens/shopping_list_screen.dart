@@ -438,12 +438,20 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                                 : Colors.black.withValues(alpha: 0.05))
                                             : Theme.of(context).colorScheme.surfaceContainerHighest,
                                         child: Center(
-                                          child: Icon(
-                                            Icons.check_rounded,
-                                            size: 22,
-                                            color: isCompleted
-                                                ? Theme.of(context).colorScheme.primary
-                                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                          child: AnimatedScale(
+                                            scale: isCompleted ? 1.2 : 1.0,
+                                            duration: const Duration(milliseconds: 200),
+                                            curve: Curves.easeOutBack,
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 200),
+                                              child: Icon(
+                                                isCompleted ? Icons.check_circle_rounded : Icons.check_rounded,
+                                                size: 22,
+                                                color: isCompleted
+                                                    ? Theme.of(context).colorScheme.primary
+                                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
