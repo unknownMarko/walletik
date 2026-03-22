@@ -432,11 +432,18 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                       Container(
                                         height: 48,
                                         width: 44,
-                                        color: isCompleted
-                                            ? (isDarkTheme
-                                                ? Colors.white.withValues(alpha: 0.05)
-                                                : Colors.black.withValues(alpha: 0.05))
-                                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        decoration: BoxDecoration(
+                                          color: isCompleted
+                                              ? (isDarkTheme
+                                                  ? Colors.white.withValues(alpha: 0.05)
+                                                  : Colors.black.withValues(alpha: 0.05))
+                                              : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          border: Border(
+                                            top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                            bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                            left: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                          ),
+                                        ),
                                         child: Center(
                                           child: AnimatedScale(
                                             scale: isCompleted ? 1.15 : 1.0,
@@ -457,11 +464,18 @@ class _ShoppingListScreenState extends State<ShoppingListScreen>
                                         child: Container(
                                           height: 48,
                                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          color: isCompleted
-                                              ? (isDarkTheme
-                                                  ? Colors.white.withValues(alpha: 0.05)
-                                                  : Colors.black.withValues(alpha: 0.05))
-                                              : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          decoration: BoxDecoration(
+                                            color: isCompleted
+                                                ? (isDarkTheme
+                                                    ? Colors.white.withValues(alpha: 0.05)
+                                                    : Colors.black.withValues(alpha: 0.05))
+                                                : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                            border: Border(
+                                              top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                              bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                              right: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                                            ),
+                                          ),
                                           alignment: Alignment.centerLeft,
                                           child: Text(
                                             item.quantity > 1 ? '${item.quantity}x ${item.name}' : item.name,
