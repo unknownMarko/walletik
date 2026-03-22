@@ -6,7 +6,6 @@ import '../providers/card_provider.dart';
 import '../utils/color_utils.dart';
 import '../utils/barcode_utils.dart';
 import '../screens/add_card_screen.dart';
-import 'loyalty_card.dart' show GrainOverlay;
 
 class CardDetailModal extends StatefulWidget {
   final LoyaltyCard? card;
@@ -174,7 +173,6 @@ class _CardDetailModalState extends State<CardDetailModal>
         ),
         child: Stack(
           children: [
-            const GrainOverlay(),
             Positioned(
               top: -20,
               left: -20,

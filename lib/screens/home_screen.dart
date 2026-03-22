@@ -156,7 +156,6 @@ class HomeScreenState extends State<HomeScreen>
           borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
-              const card_widget.GrainOverlay(),
               Positioned(
                 top: -30,
                 left: -30,
