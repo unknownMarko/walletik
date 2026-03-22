@@ -11,10 +11,10 @@ A loyalty card wallet & shopping list app built with Flutter. Store all your loy
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/home.png" width="200" alt="Home Screen" />
-  <img src="screenshots/cards.png" width="200" alt="My Cards" />
-  <img src="screenshots/shopping.png" width="200" alt="Shopping List" />
-  <img src="screenshots/settings.png" width="200" alt="Settings" />
+  <img src="screenshots/home.webp" width="200" alt="Home Screen" />
+  <img src="screenshots/my-cards.webp" width="200" alt="My Cards" />
+  <img src="screenshots/shopping.webp" width="200" alt="Shopping List" />
+  <img src="screenshots/settings.webp" width="200" alt="Settings" />
 </p>
 
 ## Features
