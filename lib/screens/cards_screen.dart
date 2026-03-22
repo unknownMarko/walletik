@@ -208,7 +208,40 @@ class _CardsScreenState extends State<CardsScreen>
                   ),
                 ),
                 Expanded(
-                  child: ReorderableBuilder(
+                  child: displayCards.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.credit_card_outlined,
+                              size: 80,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchController.text.isNotEmpty
+                                  ? 'No cards found'
+                                  : 'No cards yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            if (_searchController.text.isEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tap Add to create your first card',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    : ReorderableBuilder(
                     scrollController: _scrollController,
                     enableDraggable: _searchController.text.isEmpty,
                     dragChildBoxDecoration: const BoxDecoration(),
