@@ -382,6 +382,9 @@ class SettingsScreenState extends State<SettingsScreen>
                               topLeft: Radius.circular(12),
                               bottomLeft: Radius.circular(12),
                             ),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -443,6 +446,9 @@ class SettingsScreenState extends State<SettingsScreen>
                             borderRadius: const BorderRadius.only(
                               topRight: Radius.circular(12),
                               bottomRight: Radius.circular(12),
+                            ),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                             ),
                           ),
                           child: Row(
