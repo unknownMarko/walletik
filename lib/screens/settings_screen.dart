@@ -542,7 +542,7 @@ class SettingsScreenState extends State<SettingsScreen>
               const ListTile(
                 leading: Icon(Icons.info),
                 title: Text('App Version'),
-                subtitle: Text('0.0.1'),
+                subtitle: Text('0.1.0'),
               ),
             ],
           ),
