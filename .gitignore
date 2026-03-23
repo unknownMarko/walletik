@@ -6,6 +6,11 @@ flutter_*.png
 .claude/
 devtools_options.yaml
 walletik_import.json
+google-services.json
+*.jks
+*.keystore
+*.p12
+*.pem
 *.pyc
 *.swp
 .DS_Store
